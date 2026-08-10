@@ -54,7 +54,7 @@ export default function NossoSite() {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Data em que vocês se conheceram: 29 de Junho de 2026
-  const dataInicio = new Date(2026, 5, 29).getTime(); 
+  const dataInicio = new Date(2026, 5, 26).getTime(); 
 
   useEffect(() => {
     const atualizarCronometro = () => {
@@ -139,21 +139,21 @@ export default function NossoSite() {
       </section>
 
       {/* Galeria de Fotos */}
-      {/* Galeria de Fotos */}
       <section className="py-20 px-4 relative z-10">
         <h2 className="text-3xl font-semibold text-blue-400 text-center mb-12 tracking-wide">Nossos Momentos</h2>
         
-        {/* Adicionei items-start para alinhar os cards no topo caso as fotos tenham tamanhos diferentes */}
+        {/* Container do Grid */}
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 items-start">
           
+          {/* Foto 1 */}
           <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
             <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
-              {/* Troquei h-64 por h-auto e adicionei object-top caso ainda precise focar na parte de cima */}
               <img src="/foto1.jpg" alt="Momento 1" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
             </div>
             <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Um encontro</p>
           </div>
           
+          {/* Foto 2 */}
           <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
             <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
               <img src="/foto2.jpg" alt="Momento 2" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
@@ -161,11 +161,28 @@ export default function NossoSite() {
             <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Sempre juntos</p>
           </div>
           
+          {/* Foto 3 */}
           <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
             <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
               <img src="/foto3.jpg" alt="Momento 3" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
             </div>
             <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Um momento especial</p>
+          </div>
+
+          {/* Foto 4 */}
+          <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
+            <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
+              <img src="/foto4.jpg" alt="Momento 4" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
+            </div>
+            <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Nossas aventuras</p>
+          </div>
+
+          {/* Foto 5 */}
+          <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
+            <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
+              <img src="/foto5.jpg" alt="Momento 5" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
+            </div>
+            <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Academia juntos</p>
           </div>
 
         </div>
@@ -176,22 +193,36 @@ export default function NossoSite() {
         <h2 className="text-3xl font-semibold text-blue-400 text-center mb-12 tracking-wide">
           Por que eu amo você?
         </h2>
+        
         <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          {/* Card 1 */}
           <div className="group bg-zinc-900/40 border border-white/5 p-6 rounded-2xl text-center hover:border-blue-500/50 hover:bg-blue-900/20 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]">
-            <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🥰</div>
-            <h3 className="text-xl text-zinc-200 font-medium mb-2">Seu Sorriso</h3>
-            <p className="text-zinc-400 font-light text-sm">Que ilumina qualquer dia ruim e é a minha visão favorita no mundo.</p>
-          </div>
-          <div className="group bg-zinc-900/40 border border-white/5 p-6 rounded-2xl text-center hover:border-blue-500/50 hover:bg-blue-900/20 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]">
-            <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🤝</div>
-            <h3 className="text-xl text-zinc-200 font-medium mb-2">Nossa Parceria</h3>
-            <p className="text-zinc-400 font-light text-sm">O jeito que a gente se entende e se apoia em absolutamente tudo.</p>
-          </div>
-          <div className="group bg-zinc-900/40 border border-white/5 p-6 rounded-2xl text-center hover:border-blue-500/50 hover:bg-blue-900/20 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]">
-            <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">✨</div>
+            <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🥰</div>
             <h3 className="text-xl text-zinc-200 font-medium mb-2">Seu olhar</h3>
-            <p className="text-zinc-400 font-light text-sm">É incrivel como o seu olhar é tão apaixonante.</p>
+            <p className="text-zinc-400 font-light text-sm">
+              É incrível como o seu olhar é tão apaixonante... chega a me deixar todo bobinho e me faz esquecer de tudo ao redor.
+            </p>
           </div>
+          
+          {/* Card 2 */}
+          <div className="group bg-zinc-900/40 border border-white/5 p-6 rounded-2xl text-center hover:border-blue-500/50 hover:bg-blue-900/20 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]">
+            <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🧩</div>
+            <h3 className="text-xl text-zinc-200 font-medium mb-2">Nossa conexão</h3>
+            <p className="text-zinc-400 font-light text-sm">
+              A forma como a gente se entende, se apoia e combina em absolutamente tudo, com uma sintonia absurda.
+            </p>
+          </div>
+          
+          {/* Card 3 */}
+          <div className="group bg-zinc-900/40 border border-white/5 p-6 rounded-2xl text-center hover:border-blue-500/50 hover:bg-blue-900/20 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]">
+            <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">❤️</div>
+            <h3 className="text-xl text-zinc-200 font-medium mb-2">Seu jeitinho</h3>
+            <p className="text-zinc-400 font-light text-sm">
+              A maneira única como você enxerga a vida e cuida de mim, me fazendo querer ser alguém melhor todos os dias.
+            </p>
+          </div>
+
         </div>
       </section>
 
@@ -236,6 +267,9 @@ export default function NossoSite() {
             </p>
             <p>
               A cada dia que passa, me apaixono ainda mais por você. O quanto combinamos, os nossos gostos, aquele modão raiz que a gente escuta juntos, meu Deus...
+            </p>
+            <p>
+              É incrível como todas as vezes que a gente sai junto, é uma saída melhor que a outra. Se eu pudesse parar o tempo pra não passar tão rápido, ficaríamos por dias juntinhos.
             </p>
             <p>
               Sempre vou estar com você. Meu amor por você sempre vai ser imenso, e aumentando cada dia mais.
