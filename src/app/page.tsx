@@ -45,6 +45,34 @@ const Estrelas = () => {
   );
 };
 
+// --- COMPONENTE DO RELÓGIO BUGADO ---
+const RelogioBugado = () => {
+  const [texto, setTexto] = useState("00:00:00");
+  const caracteres = "0123456789§¥£¢∞≠?!@#$%";
+
+  useEffect(() => {
+    const intervalo = setInterval(() => {
+      // 10% de chance de mostrar a data do pedido (19/09/26) disfarçada de hora
+      if (Math.random() > 0.9) {
+        setTexto("19:09:26");
+      } else {
+        let baguncado = "";
+        for (let i = 0; i < 6; i++) {
+          baguncado += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+        }
+        setTexto(`${baguncado.substring(0,2)}:${baguncado.substring(2,4)}:${baguncado.substring(4,6)}`);
+      }
+    }, 70); // Velocidade do "bug" (70 milissegundos)
+
+    return () => clearInterval(intervalo);
+  }, []);
+
+  return (
+    <div className="font-mono text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 tracking-widest drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]">
+      {texto}
+    </div>
+  );
+};
 
 // --- PÁGINA PRINCIPAL ---
 export default function NossoSite() {
@@ -53,7 +81,7 @@ export default function NossoSite() {
   
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Data em que vocês se conheceram: 29 de Junho de 2026
+  // Data em que vocês se conheceram: 26 de Junho de 2026
   const dataInicio = new Date(2026, 5, 26).getTime(); 
 
   useEffect(() => {
@@ -285,6 +313,31 @@ export default function NossoSite() {
               Vitor
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* Seção Mistério / Pedido */}
+      <section className="py-20 px-4 relative z-10">
+        <div className="max-w-2xl mx-auto bg-zinc-900/60 border border-cyan-500/50 backdrop-blur-md p-8 md:p-12 rounded-3xl shadow-[0_0_40px_rgba(34,211,238,0.15)] text-center relative overflow-hidden group">
+          
+          {/* Luz de fundo pulsante */}
+          <div className="absolute inset-0 bg-cyan-500/5 animate-pulse"></div>
+
+          <h2 className="text-2xl md:text-3xl font-semibold text-cyan-400 mb-4 tracking-wide flex items-center justify-center gap-3">
+            ⚠️ Anomalia Detectada 
+          </h2>
+          
+          <p className="text-zinc-300 text-lg font-light mb-8">
+            Nossos radares captaram uma perturbação no espaço-tempo. Uma grande colisão de universos está prevista para acontecer em breve, gerando uma energia nunca antes vista.
+          </p>
+
+          <div className="bg-black/40 py-6 px-4 rounded-xl border border-white/5 inline-block min-w-[250px]">
+            <RelogioBugado />
+          </div>
+          
+          <p className="text-cyan-500/70 text-sm mt-6 font-mono uppercase tracking-widest animate-pulse">
+            Aguardando estabilização do sistema...
+          </p>
         </div>
       </section>
 
