@@ -400,48 +400,50 @@ export default function NossoSite() {
       {/* POP-UP DA SURPRESA (MODAL) */}
       {abrirSurpresa && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="max-w-xl w-full bg-zinc-900 border border-cyan-500 rounded-3xl p-8 text-center shadow-[0_0_50px_rgba(34,211,238,0.3)] relative transform transition-all">
+          {/* Adicionado: max-h-[90vh] (altura máxima) e overflow-y-auto (rolagem), além de p-5 no mobile */}
+          <div className="max-w-xl w-full max-h-[90vh] overflow-y-auto bg-zinc-900 border border-cyan-500 rounded-3xl p-5 md:p-8 text-center shadow-[0_0_50px_rgba(34,211,238,0.3)] relative transform transition-all">
             
             {/* Botão de fechar */}
             <button 
               onClick={() => setAbrirSurpresa(false)}
-              className="absolute top-4 right-4 text-zinc-500 hover:text-cyan-400 text-3xl transition-colors"
+              className="absolute top-3 right-4 text-zinc-500 hover:text-cyan-400 text-3xl transition-colors"
             >
               &times;
             </button>
 
-            <div className="text-6xl mb-4 animate-bounce">👩‍❤️‍👨</div>
+            <div className="text-5xl md:text-6xl mb-4 animate-bounce mt-4 md:mt-0">👩‍❤️‍👨</div>
             
-            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+            {/* Textos ajustados para mobile (ex: text-2xl no celular, text-3xl no PC) */}
+            <h2 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
               Colisão Concluída!
             </h2>
             
-            <p className="text-zinc-300 text-lg font-light mb-6">
+            <p className="text-zinc-300 text-base md:text-lg font-light mb-6">
               O evento gravitacional em Corumbá de Goiás foi um sucesso absoluto. Nossas trajetórias se alinharam perfeitamente.
             </p>
 
-            <div className="bg-black/50 border border-cyan-500/30 rounded-xl p-4 inline-block mb-6 shadow-[inset_0_0_15px_rgba(34,211,238,0.1)]">
-              <p className="text-cyan-400 font-mono text-xl uppercase tracking-widest font-bold">
+            <div className="bg-black/50 border border-cyan-500/30 rounded-xl p-3 md:p-4 inline-block mb-6 shadow-[inset_0_0_15px_rgba(34,211,238,0.1)]">
+              <p className="text-cyan-400 font-mono text-lg md:text-xl uppercase tracking-widest font-bold">
                 Novo Status: Namorados
               </p>
             </div>
 
             {/* O toque de Física/Astronomia */}
             <div className="bg-blue-900/10 border border-blue-500/20 p-4 rounded-xl mb-6 text-left">
-              <p className="text-blue-300 text-sm font-light italic">
+              <p className="text-blue-300 text-xs md:text-sm font-light italic">
                 "Na astronomia, quando duas estrelas se encontram e passam a orbitar o mesmo centro gravitacional, elas formam um <strong className="text-cyan-400 font-medium">Sistema Estelar Binário</strong>. A partir de ontem, deixamos de viajar sozinhos pelo espaço."
               </p>
             </div>
 
             {/* Espaço para a foto de vocês em Corumbá */}
-            <div className="border-2 border-dashed border-cyan-500/30 rounded-xl p-6 bg-black/20 group hover:border-cyan-500/60 transition-colors">
-              <p className="text-cyan-500/60 font-mono text-xs uppercase tracking-widest mb-2">
+            <div className="border-2 border-dashed border-cyan-500/30 rounded-xl p-4 md:p-6 bg-black/20 group hover:border-cyan-500/60 transition-colors">
+              <p className="text-cyan-500/60 font-mono text-[10px] md:text-xs uppercase tracking-widest mb-2">
                 [ Evidência Fotográfica do Sistema Binário ]
               </p>
               
               {/* Quando você tiver a foto da viagem, você pode trocar essa <div> inteira pela tag <img> */}
-              <div className="h-40 flex items-center justify-center">
-                <p className="text-zinc-500 text-sm italic">
+              <div className="h-32 md:h-40 flex items-center justify-center">
+                <p className="text-zinc-500 text-xs md:text-sm italic px-2">
                   (Inserir aqui a nossa primeira foto oficial tirada em Corumbá!)
                 </p>
               </div>
