@@ -396,34 +396,57 @@ export default function NossoSite() {
       <footer className="text-center py-10 text-zinc-500 font-medium border-t border-white/5 relative z-10">
         Feito com muito 💙
       </footer>
+
       {/* POP-UP DA SURPRESA (MODAL) */}
       {abrirSurpresa && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="max-w-xl w-full bg-zinc-900 border border-cyan-500 rounded-3xl p-8 text-center shadow-[0_0_50px_rgba(34,211,238,0.3)] relative transform animate-bounce-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="max-w-xl w-full bg-zinc-900 border border-cyan-500 rounded-3xl p-8 text-center shadow-[0_0_50px_rgba(34,211,238,0.3)] relative transform transition-all">
             
             {/* Botão de fechar */}
             <button 
               onClick={() => setAbrirSurpresa(false)}
-              className="absolute top-4 right-4 text-zinc-500 hover:text-white text-2xl"
+              className="absolute top-4 right-4 text-zinc-500 hover:text-cyan-400 text-3xl transition-colors"
             >
               &times;
             </button>
 
-            <div className="text-6xl mb-6">💍</div>
-            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-4">
+            <div className="text-6xl mb-4 animate-bounce">👩‍❤️‍👨</div>
+            
+            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
               Colisão Concluída!
             </h2>
+            
             <p className="text-zinc-300 text-lg font-light mb-6">
-              O evento gravitacional do dia 19 foi um sucesso absoluto. Nossos universos se fundiram de forma irreversível. 
+              O evento gravitacional em Corumbá de Goiás foi um sucesso absoluto. Nossas trajetórias se alinharam perfeitamente.
             </p>
-            <div className="bg-black/50 border border-white/10 rounded-xl p-4 inline-block mb-6">
-              <p className="text-cyan-400 font-mono text-xl uppercase tracking-widest">
-                Status: Namorados!
+
+            <div className="bg-black/50 border border-cyan-500/30 rounded-xl p-4 inline-block mb-6 shadow-[inset_0_0_15px_rgba(34,211,238,0.1)]">
+              <p className="text-cyan-400 font-mono text-xl uppercase tracking-widest font-bold">
+                Novo Status: Namorados
               </p>
             </div>
-            <p className="text-zinc-400 text-sm">
-              (Aqui você poderá colocar a foto das alianças depois que voltarem da viagem!)
-            </p>
+
+            {/* O toque de Física/Astronomia */}
+            <div className="bg-blue-900/10 border border-blue-500/20 p-4 rounded-xl mb-6 text-left">
+              <p className="text-blue-300 text-sm font-light italic">
+                "Na astronomia, quando duas estrelas se encontram e passam a orbitar o mesmo centro gravitacional, elas formam um <strong className="text-cyan-400 font-medium">Sistema Estelar Binário</strong>. A partir de ontem, deixamos de viajar sozinhos pelo espaço."
+              </p>
+            </div>
+
+            {/* Espaço para a foto de vocês em Corumbá */}
+            <div className="border-2 border-dashed border-cyan-500/30 rounded-xl p-6 bg-black/20 group hover:border-cyan-500/60 transition-colors">
+              <p className="text-cyan-500/60 font-mono text-xs uppercase tracking-widest mb-2">
+                [ Evidência Fotográfica do Sistema Binário ]
+              </p>
+              
+              {/* Quando você tiver a foto da viagem, você pode trocar essa <div> inteira pela tag <img> */}
+              <div className="h-40 flex items-center justify-center">
+                <p className="text-zinc-500 text-sm italic">
+                  (Inserir aqui a nossa primeira foto oficial tirada em Corumbá!)
+                </p>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
