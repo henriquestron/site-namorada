@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 // --- COMPONENTE DA CHUVA DE ESTRELAS ---
 const Estrelas = () => {
   const [estrelas, setEstrelas] = useState<{ id: number; x: number; y: number; size: number; duration: number; delay: number }[]>([]);
-
+  
   useEffect(() => {
     // Cria 50 estrelinhas em posições aleatórias na tela
     const novasEstrelas = Array.from({ length: 50 }).map((_, i) => ({
@@ -78,6 +78,8 @@ const RelogioBugado = () => {
 export default function NossoSite() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [tempoJuntos, setTempoJuntos] = useState({ anos: 0, meses: 0, dias: 0, horas: 0, minutos: 0, segundos: 0 });
+  const [diaDaSurpresaChegou, setDiaDaSurpresaChegou] = useState(false);
+  const [abrirSurpresa, setAbrirSurpresa] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -99,6 +101,23 @@ export default function NossoSite() {
       const diasRestantes = (dias % 365) % 30;
 
       setTempoJuntos({ anos, meses, dias: diasRestantes, horas, minutos, segundos });
+    };
+
+    const intervalo = setInterval(atualizarCronometro, 1000);
+    return () => clearInterval(intervalo);
+  }, [dataInicio]);
+  // No useEffect do cronômetro, a gente adiciona a checagem da data!
+  useEffect(() => {
+    // 20 de Setembro de 2026 (Lembrando que Setembro é o mês 8 no JavaScript)
+    const dataSurpresa = new Date(2026, 8, 1).getTime(); 
+
+    const atualizarCronometro = () => {
+      const agora = new Date().getTime();
+      
+      // CHECAGEM DA SURPRESA: Se "agora" for maior ou igual ao dia 20, libera o botão!
+      if (agora >= dataSurpresa) {
+        setDiaDaSurpresaChegou(true);
+      }
     };
 
     const intervalo = setInterval(atualizarCronometro, 1000);
@@ -360,12 +379,54 @@ export default function NossoSite() {
             Aguardando colisão do sistema...
           </p>
         </div>
+        {/* BOTÃO SECRETO (SÓ APARECE DIA 20+) */}
+          {diaDaSurpresaChegou && (
+            <div className="mt-8 animate-fade-in-up">
+              <button 
+                onClick={() => setAbrirSurpresa(true)}
+                className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 px-8 rounded-full shadow-[0_0_20px_rgba(34,211,238,0.5)] hover:shadow-[0_0_40px_rgba(34,211,238,0.8)] transition-all transform hover:scale-110 flex items-center gap-3 mx-auto"
+              >
+                <span>🔓</span> Acessar Relatório da Colisão
+              </button>
+            </div>
+          )}
       </section>
 
       {/* Rodapé */}
       <footer className="text-center py-10 text-zinc-500 font-medium border-t border-white/5 relative z-10">
         Feito com muito 💙
       </footer>
+      {/* POP-UP DA SURPRESA (MODAL) */}
+      {abrirSurpresa && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="max-w-xl w-full bg-zinc-900 border border-cyan-500 rounded-3xl p-8 text-center shadow-[0_0_50px_rgba(34,211,238,0.3)] relative transform animate-bounce-in">
+            
+            {/* Botão de fechar */}
+            <button 
+              onClick={() => setAbrirSurpresa(false)}
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white text-2xl"
+            >
+              &times;
+            </button>
+
+            <div className="text-6xl mb-6">💍</div>
+            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-4">
+              Colisão Concluída!
+            </h2>
+            <p className="text-zinc-300 text-lg font-light mb-6">
+              O evento gravitacional do dia 19 foi um sucesso absoluto. Nossos universos se fundiram de forma irreversível. 
+            </p>
+            <div className="bg-black/50 border border-white/10 rounded-xl p-4 inline-block mb-6">
+              <p className="text-cyan-400 font-mono text-xl uppercase tracking-widest">
+                Status: Namorados!
+              </p>
+            </div>
+            <p className="text-zinc-400 text-sm">
+              (Aqui você poderá colocar a foto das alianças depois que voltarem da viagem!)
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
