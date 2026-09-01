@@ -7,7 +7,6 @@ const Estrelas = () => {
   const [estrelas, setEstrelas] = useState<{ id: number; x: number; y: number; size: number; duration: number; delay: number }[]>([]);
   
   useEffect(() => {
-    // Cria 50 estrelinhas em posições aleatórias na tela
     const novasEstrelas = Array.from({ length: 50 }).map((_, i) => ({
       id: i,
       x: Math.random() * 100,
@@ -52,7 +51,6 @@ const RelogioBugado = () => {
 
   useEffect(() => {
     const intervalo = setInterval(() => {
-      // 10% de chance de mostrar a data do pedido (19/09/26) disfarçada de hora
       if (Math.random() > 0.9) {
         setTexto("19:09:26");
       } else {
@@ -62,8 +60,7 @@ const RelogioBugado = () => {
         }
         setTexto(`${baguncado.substring(0,2)}:${baguncado.substring(2,4)}:${baguncado.substring(4,6)}`);
       }
-    }, 70); // Velocidade do "bug" (70 milissegundos)
-
+    }, 70);
     return () => clearInterval(intervalo);
   }, []);
 
@@ -78,66 +75,156 @@ const RelogioBugado = () => {
 export default function NossoSite() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [tempoJuntos, setTempoJuntos] = useState({ anos: 0, meses: 0, dias: 0, horas: 0, minutos: 0, segundos: 0 });
+  
   const [diaDaSurpresaChegou, setDiaDaSurpresaChegou] = useState(false);
   const [abrirSurpresa, setAbrirSurpresa] = useState(false);
   
-  const audioRef = useRef<HTMLAudioElement>(null);
+  // Controle da Super Animação (0=Normal, 1=Tremendo, 2=Voando e Estrelas, 3=Flash, 4=Fim)
+  const [faseAnimacao, setFaseAnimacao] = useState(0); 
 
-  // Data em que vocês se conheceram: 26 de Junho de 2026
+  const audioRef = useRef<HTMLAudioElement>(null);
   const dataInicio = new Date(2026, 5, 26).getTime(); 
 
+  // Cronômetro normal
   useEffect(() => {
     const atualizarCronometro = () => {
       const agora = new Date().getTime();
       const diferenca = agora - dataInicio;
-
       const segundos = Math.floor((diferenca / 1000) % 60);
       const minutos = Math.floor((diferenca / 1000 / 60) % 60);
       const horas = Math.floor((diferenca / (1000 * 60 * 60)) % 24);
       const dias = Math.floor(diferenca / (1000 * 60 * 60 * 24));
-      
       const anos = Math.floor(dias / 365);
       const meses = Math.floor((dias % 365) / 30);
       const diasRestantes = (dias % 365) % 30;
-
       setTempoJuntos({ anos, meses, dias: diasRestantes, horas, minutos, segundos });
     };
-
     const intervalo = setInterval(atualizarCronometro, 1000);
     return () => clearInterval(intervalo);
   }, [dataInicio]);
-  // No useEffect do cronômetro, a gente adiciona a checagem da data!
+
+  // Checagem da Data da Surpresa
   useEffect(() => {
-    // 20 de Setembro de 2026 (Lembrando que Setembro é o mês 8 no JavaScript)
+    // ATENÇÃO: Está para 1 de Setembro (mês 8) para testar! 
+    // Troque para dia 20 depois de ver a animação.
     const dataSurpresa = new Date(2026, 8, 20).getTime(); 
 
-    const atualizarCronometro = () => {
-      const agora = new Date().getTime();
-      
-      // CHECAGEM DA SURPRESA: Se "agora" for maior ou igual ao dia 20, libera o botão!
-      if (agora >= dataSurpresa) {
+    const verificarData = () => {
+      if (new Date().getTime() >= dataSurpresa) {
         setDiaDaSurpresaChegou(true);
       }
     };
-
-    const intervalo = setInterval(atualizarCronometro, 1000);
+    const intervalo = setInterval(verificarData, 1000);
     return () => clearInterval(intervalo);
-  }, [dataInicio]);
+  }, []);
 
   const togglePlay = () => {
     if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
+      if (isPlaying) audioRef.current.pause();
+      else audioRef.current.play();
       setIsPlaying(!isPlaying);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-zinc-950 to-black text-gray-200 font-sans selection:bg-blue-500 selection:text-white relative">
+  // A Lógica da Animação Cinematográfica
+  const dispararEfeitoColisao = () => {
+    setFaseAnimacao(1); // Fase 1: Tremer e Rachar (1.5 segundos)
+    
+    setTimeout(() => {
+      setFaseAnimacao(2); // Fase 2: Metades voam, Estrelas giram rápido (2.5 segundos)
+    }, 1500);
+
+    setTimeout(() => {
+      setFaseAnimacao(3); // Fase 3: A Colisão! Tela dá um flash branco
+    }, 4000);
+
+    setTimeout(() => {
+      setFaseAnimacao(4); // Limpa as peças quebradas
+      setAbrirSurpresa(true); // Aparece o modal
+    }, 4300);
+  };
+
+  // Transforma o conteúdo em uma função para evitar bugs de clique no React
+  const renderCaixaMisterio = () => (
+    <div className="w-full h-full bg-zinc-900/60 border border-cyan-500/50 backdrop-blur-md p-8 md:p-12 rounded-3xl shadow-[0_0_40px_rgba(34,211,238,0.15)] text-center relative flex flex-col justify-center items-center">
+      <div className="absolute inset-0 bg-cyan-500/5 animate-pulse rounded-3xl pointer-events-none"></div>
       
+      <h2 className="text-2xl md:text-3xl font-semibold text-cyan-400 mb-4 tracking-wide flex items-center justify-center gap-3">
+        ⚠️ Anomalia Detectada 
+      </h2>
+      
+      <p className="text-zinc-300 text-lg font-light mb-8 max-w-xl">
+        Nossos radares captaram uma perturbação no espaço-tempo. Uma grande colisão de universos está prevista para acontecer, gerando uma energia nunca antes vista.
+      </p>
+
+      <div className="bg-black/40 py-6 px-4 rounded-xl border border-white/5 inline-block min-w-[250px] mb-8">
+        <RelogioBugado />
+      </div>
+      
+      <div className="bg-black/60 border border-cyan-500/30 rounded-lg p-5 font-mono text-left max-w-sm w-full mx-auto relative overflow-hidden shadow-[inset_0_0_20px_rgba(34,211,238,0.1)]">
+        <div className="absolute top-0 left-0 w-full h-0.5 bg-cyan-400/50 animate-pulse pointer-events-none"></div>
+        <p className="text-cyan-500/60 text-xs mb-2 uppercase tracking-wider">&gt; Rastreando singularidade...</p>
+        <div className="text-cyan-400 text-sm md:text-base animate-pulse space-y-1">
+          <p><span className="text-zinc-500">LAT:</span> 15° 55' 26" S</p>
+          <p><span className="text-zinc-500">LON:</span> 48° 48' 32" W</p>
+        </div>
+        <p className="text-cyan-500/60 text-xs mt-3 uppercase tracking-wider flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span> Epicentro Gravitacional
+        </p>
+      </div>
+
+      <p className="text-cyan-500/70 text-sm mt-8 font-mono uppercase tracking-widest animate-pulse">
+        Aguardando colisão do sistema...
+      </p>
+
+      {/* Botão Secreto */}
+      <div className={`mt-8 transition-opacity duration-300 w-full flex justify-center ${faseAnimacao === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        {diaDaSurpresaChegou && (
+          <button 
+            type="button"
+            onClick={dispararEfeitoColisao}
+            className="relative z-50 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 px-8 rounded-full shadow-[0_0_20px_rgba(34,211,238,0.5)] hover:shadow-[0_0_40px_rgba(34,211,238,0.8)] transition-all transform hover:scale-110 flex items-center gap-3 cursor-pointer"
+          >
+            <span>🔓</span> Acessar Relatório da Colisão
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-zinc-950 to-black text-gray-200 font-sans selection:bg-blue-500 selection:text-white relative overflow-hidden">
+      
+      {/* CSS CUSTOMIZADO PARA A ANIMAÇÃO DO BIG BANG */}
+      <style>{`
+        @keyframes shake-bruto {
+          0%, 100% { transform: translateX(0) rotate(0deg); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px) rotate(-1deg); }
+          20%, 40%, 60%, 80% { transform: translateX(5px) rotate(1deg); }
+        }
+        .animate-shake-bruto {
+          animation: shake-bruto 0.3s infinite;
+        }
+        
+        @keyframes orbitar-estrelas {
+          0% { transform: rotate(0deg) scale(1); width: 16rem; opacity: 0;}
+          10% { opacity: 1; }
+          100% { transform: rotate(1440deg) scale(0.1); width: 0rem; }
+        }
+        .animate-orbitar-estrelas {
+          animation: orbitar-estrelas 2.5s cubic-bezier(0.5, 0, 1, 1) forwards;
+        }
+
+        @keyframes flash-branco {
+          0% { background-color: transparent; }
+          20% { background-color: white; }
+          100% { background-color: transparent; }
+        }
+        .animate-flash-branco {
+          animation: flash-branco 0.5s ease-out forwards;
+        }
+      `}</style>
+
       {/* O componente que chama as estrelas lá no fundo */}
       <Estrelas />
       
@@ -188,50 +275,37 @@ export default function NossoSite() {
       {/* Galeria de Fotos */}
       <section className="py-20 px-4 relative z-10">
         <h2 className="text-3xl font-semibold text-blue-400 text-center mb-12 tracking-wide">Nossos Momentos</h2>
-        
-        {/* Container do Grid */}
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 items-start">
-          
-          {/* Foto 1 */}
           <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
             <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
               <img src="/foto1.jpg" alt="Momento 1" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
             </div>
             <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Um encontro</p>
           </div>
-          
-          {/* Foto 2 */}
           <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
             <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
               <img src="/foto2.jpg" alt="Momento 2" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
             </div>
             <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Sempre juntos</p>
           </div>
-          
-          {/* Foto 3 */}
           <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
             <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
               <img src="/foto3.jpg" alt="Momento 3" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
             </div>
             <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Um momento especial</p>
           </div>
-
-          {/* Foto 4 */}
           <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
             <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
               <img src="/foto4.jpg" alt="Momento 4" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
             </div>
             <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Nossas aventuras</p>
           </div>
-
-          {/* Foto 5 */}
           <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
             <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
               <img src="/foto5.jpg" alt="Momento 5" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
             </div>
             <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Academia juntos</p>
           </div>
-
         </div>
       </section>
 
@@ -240,10 +314,7 @@ export default function NossoSite() {
         <h2 className="text-3xl font-semibold text-blue-400 text-center mb-12 tracking-wide">
           Por que eu amo você?
         </h2>
-        
         <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          {/* Card 1 */}
           <div className="group bg-zinc-900/40 border border-white/5 p-6 rounded-2xl text-center hover:border-blue-500/50 hover:bg-blue-900/20 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]">
             <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🥰</div>
             <h3 className="text-xl text-zinc-200 font-medium mb-2">Seu olhar</h3>
@@ -251,8 +322,6 @@ export default function NossoSite() {
               É incrível como o seu olhar é tão apaixonante... chega a me deixar todo bobinho e me faz esquecer de tudo ao redor.
             </p>
           </div>
-          
-          {/* Card 2 */}
           <div className="group bg-zinc-900/40 border border-white/5 p-6 rounded-2xl text-center hover:border-blue-500/50 hover:bg-blue-900/20 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]">
             <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🧩</div>
             <h3 className="text-xl text-zinc-200 font-medium mb-2">Nossa conexão</h3>
@@ -260,8 +329,6 @@ export default function NossoSite() {
               A forma como a gente se entende, se apoia e combina em absolutamente tudo, com uma sintonia absurda.
             </p>
           </div>
-          
-          {/* Card 3 */}
           <div className="group bg-zinc-900/40 border border-white/5 p-6 rounded-2xl text-center hover:border-blue-500/50 hover:bg-blue-900/20 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]">
             <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">❤️</div>
             <h3 className="text-xl text-zinc-200 font-medium mb-2">Seu jeitinho</h3>
@@ -269,7 +336,6 @@ export default function NossoSite() {
               A maneira única como você enxerga a vida e cuida de mim, me fazendo querer ser alguém melhor todos os dias.
             </p>
           </div>
-
         </div>
       </section>
 
@@ -298,13 +364,10 @@ export default function NossoSite() {
       {/* Carta de Amor */}
       <section className="py-20 px-4 relative z-10">
         <div className="max-w-3xl mx-auto bg-zinc-900/60 border border-blue-500/30 backdrop-blur-md p-8 md:p-12 rounded-3xl shadow-[0_0_30px_rgba(59,130,246,0.1)] relative overflow-hidden">
-          
           <div className="absolute -top-6 -left-2 text-9xl text-blue-500/10 font-serif pointer-events-none">"</div>
-          
           <h2 className="text-3xl font-semibold text-blue-400 mb-6 text-center tracking-wide">
             Para a mulher da minha vida
           </h2>
-          
           <div className="space-y-6 text-zinc-300 text-lg leading-relaxed font-light">
             <p>
               Meu amor, criei este espaço para tentar mostrar pelo menos uma fração do quanto eu te amo. Desde a nossa primeira conversa, eu senti uma conexão tão forte e inexplicável que logo me veio um pensamento: é ela.
@@ -325,7 +388,6 @@ export default function NossoSite() {
               Eu te amo demais, meu amor.
             </p>
           </div>
-          
           <div className="mt-10 text-right">
             <p className="text-blue-400 text-xl font-medium">Com todo o meu amor,</p>
             <p className="text-2xl text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 font-bold mt-2">
@@ -335,77 +397,76 @@ export default function NossoSite() {
         </div>
       </section>
 
-      {/* Seção Mistério / Pedido */}
+      {/* SEÇÃO DA ANOMALIA COM A MEGA ANIMAÇÃO */}
       <section className="py-20 px-4 relative z-10">
-        <div className="max-w-2xl mx-auto bg-zinc-900/60 border border-cyan-500/50 backdrop-blur-md p-8 md:p-12 rounded-3xl shadow-[0_0_40px_rgba(34,211,238,0.15)] text-center relative overflow-hidden group">
+        <div className="max-w-2xl mx-auto relative">
           
-          {/* Luz de fundo pulsante */}
-          <div className="absolute inset-0 bg-cyan-500/5 animate-pulse"></div>
-
-          <h2 className="text-2xl md:text-3xl font-semibold text-cyan-400 mb-4 tracking-wide flex items-center justify-center gap-3">
-            ⚠️ Anomalia Detectada 
-          </h2>
-          
-          <p className="text-zinc-300 text-lg font-light mb-8">
-            Nossos radares captaram uma perturbação no espaço-tempo. Uma grande colisão de universos está prevista para acontecer, gerando uma energia nunca antes vista.
-          </p>
-
-          {/* O Relógio Bugado */}
-          <div className="bg-black/40 py-6 px-4 rounded-xl border border-white/5 inline-block min-w-[250px] mb-8">
-            <RelogioBugado />
-          </div>
-          
-          {/* TERMINAL DE COORDENADAS SECRETAS */}
-          <div className="bg-black/60 border border-cyan-500/30 rounded-lg p-5 font-mono text-left max-w-sm mx-auto relative overflow-hidden shadow-[inset_0_0_20px_rgba(34,211,238,0.1)]">
-            {/* Linha de escaneamento animada no topo */}
-            <div className="absolute top-0 left-0 w-full h-0.5 bg-cyan-400/50 animate-pulse"></div>
-            
-            <p className="text-cyan-500/60 text-xs mb-2 uppercase tracking-wider">
-              &gt; Rastreando singularidade...
-            </p>
-            
-            <div className="text-cyan-400 text-sm md:text-base animate-pulse space-y-1">
-              <p><span className="text-zinc-500">LAT:</span> 15° 55' 26" S</p>
-              <p><span className="text-zinc-500">LON:</span> 48° 48' 32" W</p>
-            </div>
-            
-            <p className="text-cyan-500/60 text-xs mt-3 uppercase tracking-wider flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-              Epicentro Gravitacional
-            </p>
+          {/* Caixa Fantasma (Serve apenas para manter a altura do site e não dar tranco quando a original quebrar) */}
+          <div className="opacity-0 pointer-events-none">
+            {renderCaixaMisterio()}
           </div>
 
-          <p className="text-cyan-500/70 text-sm mt-8 font-mono uppercase tracking-widest animate-pulse">
-            Aguardando colisão do sistema...
-          </p>
-        </div>
-        {/* BOTÃO SECRETO (SÓ APARECE DIA 20+) */}
-          {diaDaSurpresaChegou && (
-            <div className="mt-8 animate-fade-in-up">
-              <button 
-                onClick={() => setAbrirSurpresa(true)}
-                className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 px-8 rounded-full shadow-[0_0_20px_rgba(34,211,238,0.5)] hover:shadow-[0_0_40px_rgba(34,211,238,0.8)] transition-all transform hover:scale-110 flex items-center gap-3 mx-auto"
-              >
-                <span>🔓</span> Acessar Relatório da Colisão
-              </button>
+          {/* ESTADO 0: A caixa normal intacta */}
+          {faseAnimacao === 0 && (
+            <div className="absolute inset-0 z-20">
+              {renderCaixaMisterio()}
             </div>
           )}
+
+          {/* ESTADO 1 e 2: O Caos Acontece */}
+          {faseAnimacao === 1 || faseAnimacao === 2 ? (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              
+              {/* AS ESTRELAS DO SISTEMA BINÁRIO (Aparecem atrás da caixa na fase 2) */}
+              {faseAnimacao === 2 && (
+                <div className="absolute inset-0 flex items-center justify-center z-0">
+                  <div className="flex items-center justify-between animate-orbitar-estrelas">
+                    <div className="w-10 h-10 md:w-16 md:h-16 bg-cyan-400 rounded-full shadow-[0_0_60px_cyan]"></div>
+                    <div className="w-10 h-10 md:w-16 md:h-16 bg-rose-400 rounded-full shadow-[0_0_60px_pink]"></div>
+                  </div>
+                </div>
+              )}
+
+              {/* METADE ESQUERDA (Com o corte em zigue-zague parecendo rachadura) */}
+              <div 
+                className={`absolute inset-0 z-10 transition-transform duration-1000 ease-in-out 
+                  ${faseAnimacao === 1 ? 'animate-shake-bruto' : '-translate-x-[60vw] -translate-y-[10vh] -rotate-12 opacity-0'}`} 
+                style={{ clipPath: 'polygon(0 0, 52% 0, 48% 100%, 0 100%)' }}
+              >
+                {renderCaixaMisterio()}
+                
+                {/* O Brilho da Rachadura vazando (Só na Fase 1) */}
+                {faseAnimacao === 1 && (
+                  <div className="absolute top-0 bottom-0 left-[48%] w-2 bg-cyan-200 shadow-[0_0_30px_cyan] animate-pulse"></div>
+                )}
+              </div>
+
+              {/* METADE DIREITA (Com o outro lado do corte) */}
+              <div 
+                className={`absolute inset-0 z-10 transition-transform duration-1000 ease-in-out 
+                  ${faseAnimacao === 1 ? 'animate-shake-bruto' : 'translate-x-[60vw] translate-y-[10vh] rotate-12 opacity-0'}`} 
+                style={{ clipPath: 'polygon(52% 0, 100% 0, 100% 100%, 48% 100%)' }}
+              >
+                {renderCaixaMisterio()}
+              </div>
+
+            </div>
+          ) : null}
+        </div>
       </section>
 
-      {/* Rodapé */}
-      <footer className="text-center py-10 text-zinc-500 font-medium border-t border-white/5 relative z-10">
-        Feito com muito 💙
-      </footer>
+      {/* FASE 3: O GRANDE FLASH BRANCO DA COLISÃO */}
+      {faseAnimacao === 3 && (
+        <div className="fixed inset-0 z-[100] animate-flash-branco pointer-events-none"></div>
+      )}
 
-      {/* POP-UP DA SURPRESA (MODAL) */}
+      {/* POP-UP DA SURPRESA (MODAL FINAL) */}
       {abrirSurpresa && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          {/* Adicionado: max-h-[90vh] (altura máxima) e overflow-y-auto (rolagem), além de p-5 no mobile */}
           <div className="max-w-xl w-full max-h-[90vh] overflow-y-auto bg-zinc-900 border border-cyan-500 rounded-3xl p-5 md:p-8 text-center shadow-[0_0_50px_rgba(34,211,238,0.3)] relative transform transition-all">
             
-            {/* Botão de fechar */}
             <button 
-              onClick={() => setAbrirSurpresa(false)}
+              onClick={() => { setAbrirSurpresa(false); setFaseAnimacao(0); }}
               className="absolute top-3 right-4 text-zinc-500 hover:text-cyan-400 text-3xl transition-colors"
             >
               &times;
@@ -413,7 +474,6 @@ export default function NossoSite() {
 
             <div className="text-5xl md:text-6xl mb-4 animate-bounce mt-4 md:mt-0">👩‍❤️‍👨</div>
             
-            {/* Textos ajustados para mobile (ex: text-2xl no celular, text-3xl no PC) */}
             <h2 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
               Colisão Concluída!
             </h2>
@@ -428,20 +488,16 @@ export default function NossoSite() {
               </p>
             </div>
 
-            {/* O toque de Física/Astronomia */}
             <div className="bg-blue-900/10 border border-blue-500/20 p-4 rounded-xl mb-6 text-left">
               <p className="text-blue-300 text-xs md:text-sm font-light italic">
                 "Na astronomia, quando duas estrelas se encontram e passam a orbitar o mesmo centro gravitacional, elas formam um <strong className="text-cyan-400 font-medium">Sistema Estelar Binário</strong>. A partir de ontem, deixamos de viajar sozinhos pelo espaço."
               </p>
             </div>
 
-            {/* Espaço para a foto de vocês em Corumbá */}
             <div className="border-2 border-dashed border-cyan-500/30 rounded-xl p-4 md:p-6 bg-black/20 group hover:border-cyan-500/60 transition-colors">
               <p className="text-cyan-500/60 font-mono text-[10px] md:text-xs uppercase tracking-widest mb-2">
                 [ Evidência Fotográfica do Sistema Binário ]
               </p>
-              
-              {/* Quando você tiver a foto da viagem, você pode trocar essa <div> inteira pela tag <img> */}
               <div className="h-32 md:h-40 flex items-center justify-center">
                 <p className="text-zinc-500 text-xs md:text-sm italic px-2">
                   (Inserir aqui a nossa primeira foto oficial tirada em Corumbá!)
@@ -452,6 +508,11 @@ export default function NossoSite() {
           </div>
         </div>
       )}
+
+      {/* Rodapé */}
+      <footer className="text-center py-10 text-zinc-500 font-medium border-t border-white/5 relative z-10">
+        Feito com muito 💙
+      </footer>
     </div>
   );
 }
