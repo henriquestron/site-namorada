@@ -328,15 +328,36 @@ export default function NossoSite() {
           </h2>
           
           <p className="text-zinc-300 text-lg font-light mb-8">
-            Nossos radares captaram uma perturbação no espaço-tempo. Uma grande colisão de universos está prevista para acontecer em breve, gerando uma energia nunca antes vista.
+            Nossos radares captaram uma perturbação no espaço-tempo. Uma grande colisão de universos está prevista para acontecer, gerando uma energia nunca antes vista.
           </p>
 
-          <div className="bg-black/40 py-6 px-4 rounded-xl border border-white/5 inline-block min-w-[250px]">
+          {/* O Relógio Bugado */}
+          <div className="bg-black/40 py-6 px-4 rounded-xl border border-white/5 inline-block min-w-[250px] mb-8">
             <RelogioBugado />
           </div>
           
-          <p className="text-cyan-500/70 text-sm mt-6 font-mono uppercase tracking-widest animate-pulse">
-            Aguardando estabilização do sistema...
+          {/* TERMINAL DE COORDENADAS SECRETAS */}
+          <div className="bg-black/60 border border-cyan-500/30 rounded-lg p-5 font-mono text-left max-w-sm mx-auto relative overflow-hidden shadow-[inset_0_0_20px_rgba(34,211,238,0.1)]">
+            {/* Linha de escaneamento animada no topo */}
+            <div className="absolute top-0 left-0 w-full h-0.5 bg-cyan-400/50 animate-pulse"></div>
+            
+            <p className="text-cyan-500/60 text-xs mb-2 uppercase tracking-wider">
+              &gt; Rastreando singularidade...
+            </p>
+            
+            <div className="text-cyan-400 text-sm md:text-base animate-pulse space-y-1">
+              <p><span className="text-zinc-500">LAT:</span> 15° 55' 26" S</p>
+              <p><span className="text-zinc-500">LON:</span> 48° 48' 32" W</p>
+            </div>
+            
+            <p className="text-cyan-500/60 text-xs mt-3 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+              Epicentro Gravitacional
+            </p>
+          </div>
+
+          <p className="text-cyan-500/70 text-sm mt-8 font-mono uppercase tracking-widest animate-pulse">
+            Aguardando colisão do sistema...
           </p>
         </div>
       </section>
