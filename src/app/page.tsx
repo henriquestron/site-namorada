@@ -109,7 +109,7 @@ export default function NossoSite() {
   // No useEffect do cronômetro, a gente adiciona a checagem da data!
   useEffect(() => {
     // 20 de Setembro de 2026 (Lembrando que Setembro é o mês 8 no JavaScript)
-    const dataSurpresa = new Date(2026, 8, 1).getTime(); 
+    const dataSurpresa = new Date(2026, 8, 20).getTime(); 
 
     const atualizarCronometro = () => {
       const agora = new Date().getTime();
