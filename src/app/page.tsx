@@ -165,8 +165,8 @@ export default function NossoSite() {
         <div className="absolute top-0 left-0 w-full h-0.5 bg-cyan-400/50 animate-pulse pointer-events-none"></div>
         <p className="text-cyan-500/60 text-xs mb-2 uppercase tracking-wider">&gt; Rastreando singularidade...</p>
         <div className="text-cyan-400 text-sm md:text-base animate-pulse space-y-1">
-          <p><span className="text-zinc-500">LAT:</span> 15° 55' 26" S</p>
-          <p><span className="text-zinc-500">LON:</span> 48° 48' 32" W</p>
+          <p><span className="text-zinc-500">LAT:</span> 15°5?'??" S</p>
+          <p><span className="text-zinc-500">LON:</span> 48°4?'??" W</p>
         </div>
         <p className="text-cyan-500/60 text-xs mt-3 uppercase tracking-wider flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span> Epicentro Gravitacional
@@ -272,40 +272,41 @@ export default function NossoSite() {
         </div>
       </section>
 
-      {/* Galeria de Fotos */}
+      {/* Galeria de Fotos - Carrossel */}
       <section className="py-20 px-4 relative z-10">
         <h2 className="text-3xl font-semibold text-blue-400 text-center mb-12 tracking-wide">Nossos Momentos</h2>
-        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 items-start">
-          <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
-            <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
-              <img src="/foto1.jpg" alt="Momento 1" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
+        
+        {/* Container do Carrossel com scroll horizontal */}
+        <div 
+          className="max-w-6xl mx-auto flex overflow-x-auto snap-x snap-mandatory gap-6 pb-10 px-4"
+          style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(59,130,246,0.5) transparent' }}
+        >
+          {[
+            // === MUDE AS FOTOS E OS TEXTOS AQUI ===
+            { src: '/foto1.jpg', title: 'Um encontro' },
+            { src: '/foto2.jpg', title: 'Sempre juntos' },
+            { src: '/foto3.jpg', title: 'Um momento especial' },
+            { src: '/foto4.jpg', title: 'Nossas aventuras' },
+            { src: '/foto5.jpg', title: 'Academia juntos' },
+            { src: '/foto6.jpg', title: 'Nossos momentos' },
+            { src: '/foto7.jpg', title: 'Minha Vida ❤❤' },
+            { src: '/foto8.jpg', title: 'Meu Amor ❤' },
+            // Para adicionar mais, é só copiar a linha de cima e mudar o número da foto!
+          ].map((foto, index) => (
+            <div 
+              key={index} 
+              className="group min-w-[280px] md:min-w-[320px] shrink-0 snap-center overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm cursor-pointer"
+            >
+              <div className="overflow-hidden rounded-xl flex justify-center bg-black/20 h-[300px] md:h-[400px]">
+                <img 
+                  src={foto.src} 
+                  alt={foto.title} 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out" 
+                />
+              </div>
+              <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">{foto.title}</p>
             </div>
-            <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Um encontro</p>
-          </div>
-          <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
-            <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
-              <img src="/foto2.jpg" alt="Momento 2" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
-            </div>
-            <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Sempre juntos</p>
-          </div>
-          <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
-            <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
-              <img src="/foto3.jpg" alt="Momento 3" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
-            </div>
-            <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Um momento especial</p>
-          </div>
-          <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
-            <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
-              <img src="/foto4.jpg" alt="Momento 4" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
-            </div>
-            <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Nossas aventuras</p>
-          </div>
-          <div className="group overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm">
-            <div className="overflow-hidden rounded-xl flex justify-center bg-black/20">
-              <img src="/foto5.jpg" alt="Momento 5" className="w-full h-auto max-h-[400px] object-contain group-hover:scale-105 transition-transform duration-700 ease-in-out" />
-            </div>
-            <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">Academia juntos</p>
-          </div>
+          ))}
         </div>
       </section>
 
