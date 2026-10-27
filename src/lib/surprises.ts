@@ -14,7 +14,7 @@ export type SurpriseItem = {
   id: string; title: string; text: string; date: string; image: string; audio: string;
   letter: string; done: boolean; x: number; y: number;
 };
-export type SurpriseContent = { title: string; intro: string; unlockAt: string; items: SurpriseItem[]; timelineRevision?: number };
+export type SurpriseContent = { title: string; intro: string; unlockAt: string; items: SurpriseItem[]; timelineRevision?: number; chaptersRevision?: number };
 export type PublicSurprise = { id: SectionId; content: SurpriseContent; locked: boolean };
 export type AdminSurprise = {
   id: SectionId; draft: SurpriseContent; published: SurpriseContent | null;
@@ -60,7 +60,8 @@ export function validateContent(value: unknown): SurpriseContent {
     return { id, title: str(i.title, 160), text: str(i.text, 12000), date, image, audio, letter, done: i.done, x: i.x, y: i.y };
   });
   if (v.timelineRevision !== undefined && (typeof v.timelineRevision !== "number" || !Number.isSafeInteger(v.timelineRevision) || v.timelineRevision < 0)) throw new Error("Revisão da linha do tempo inválida.");
-  return { title, intro, unlockAt, items, ...(v.timelineRevision === undefined ? {} : { timelineRevision: v.timelineRevision as number }) };
+  if (v.chaptersRevision !== undefined && (typeof v.chaptersRevision !== "number" || !Number.isSafeInteger(v.chaptersRevision) || v.chaptersRevision < 0)) throw new Error("Revisão dos próximos capítulos inválida.");
+  return { title, intro, unlockAt, items, ...(v.timelineRevision === undefined ? {} : { timelineRevision: v.timelineRevision as number }), ...(v.chaptersRevision === undefined ? {} : { chaptersRevision: v.chaptersRevision as number }) };
 }
 export function validatePublication(id: SectionId, content: SurpriseContent) {
   if (!content.items.length) throw new Error("Adicione pelo menos um item antes de liberar.");

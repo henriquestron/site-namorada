@@ -1,0 +1,95 @@
+diff --git a/src/lib/public-surprises.ts b/src/lib/public-surprises.ts
+index 4bcbca898f107a9d36d57b884d9eb0506f29c11c..26c533b43c86a20d0e9a414c7c8ab6579978dc0d 100644
+--- a/src/lib/public-surprises.ts
++++ b/src/lib/public-surprises.ts
+@@ -8,6 +8,11 @@ function section(id: SectionId, values: Partial<SurpriseContent>): PublicSurpris
+   return { id, locked: false, content: { ...emptyContent(id), ...values } };
+ }
+ const timelineRevision = 1;
++const chaptersRevision = 1;
++const nextChapters: SurpriseItem[] = [
++  item("concursados-juntos", { title: "Concursados ano que vem", text: "Se Deus quiser vamos ser concursados ano que vem" }),
++  item("praia-em-julho", { title: "Praia em julho", text: "Se Deus quiser vamos conhecer a praia em julho e comemorar que passamos no concurso em grande estilo juntos" }),
++];
+ const addedTimelineMoments: SurpriseItem[] = [
+   item("segundo-encontro", { title: "Nosso segundo encontro", date: "2026-07-03", text: "Quando saímos pela segunda vez em uma sexta." }),
+   item("passeio-vaca-brava", { title: "Nosso passeio no Vaca Brava", date: "2026-07-09", text: "Dia 9 quando fizemos nosso passeio no parque vaca brava" }),
+@@ -28,6 +33,14 @@ export function includeTimelineMoments(content: SurpriseContent): SurpriseConten
+     items: [...content.items, ...structuredClone(missing)].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999")),
+   };
+ }
++// Update older saved content once; later edits in the panel stay intact.
++export function includeSectionUpdates(id: SectionId, content: SurpriseContent): SurpriseContent {
++  if (id === "timeline") return includeTimelineMoments(content);
++  if (id === "chapters" && (content.chaptersRevision ?? 0) < chaptersRevision) {
++    return { ...content, chaptersRevision, items: structuredClone(nextChapters) };
++  }
++  return content;
++}
+ export const publicStartingSections: PublicSurprise[] = [
+   section("timeline", { intro: "Cada pedacinho da nossa história merece ficar guardado.", timelineRevision, items: [
+     item("nosso-comeco", { title: "O começo da nossa história", date: "2026-06-26", text: "Desde a nossa primeira conversa, eu senti uma conexão tão forte e inexplicável que logo me veio um pensamento: é ela." }),
+@@ -41,10 +54,7 @@ export const publicStartingSections: PublicSurprise[] = [
+   ] }),
+   section("capsule", { intro: "Um lugar para guardar uma carta e reencontrar esse carinho no futuro." }),
+   section("voice", { intro: "Um cantinho para os recados que também podem ser ouvidos." }),
+-  section("chapters", { intro: "Ainda temos tanta história pela frente.", items: [
+-    item("viajar-juntos", { title: "Conhecer novos lugares", text: "Quero crescer ao seu lado, construir a nossa história e viajar o mundo com você." }),
+-    item("momentos-simples", { title: "Continuar vivendo os nossos momentos", text: "Um cantinho só nosso. Para guardar o que vivemos, lembrar do que sentimos e sonhar com o que vem." }),
+-  ] }),
++  section("chapters", { intro: "Ainda temos tanta história pela frente.", chaptersRevision, items: nextChapters }),
+   section("reasons", { intro: "Um detalhe seu de cada vez.", items: [
+     item("seu-olhar", { title: "Seu olhar", text: "É incrível como o seu olhar é tão apaixonante… chega a me deixar todo bobinho e me faz esquecer de tudo ao redor." }),
+     item("nossa-conexao", { title: "Nossa conexão", text: "A forma como a gente se entende, se apoia e combina em absolutamente tudo, com uma sintonia absurda." }),
+@@ -61,6 +71,6 @@ export function hasSavedContent(row: Pick<AdminSurprise, "version" | "draft">) {
+ export function mergePublicSections(overrides: PublicSurprise[]) {
+   return sectionIds.map((id) => {
+     const selected = overrides.find((entry) => entry.id === id) ?? publicStartingSections.find((entry) => entry.id === id)!;
+-    return id === "timeline" ? { ...selected, content: includeTimelineMoments(selected.content) } : selected;
++    return { ...selected, content: includeSectionUpdates(id, selected.content) };
+   });
+ }
+diff --git a/src/lib/server/surprise-store.ts b/src/lib/server/surprise-store.ts
+index ebe6f29b374c49a2a01bf214a9dbbc06f14ec4de..ed6a5b64f4a283c0ed0ff18e667e66f177881f03 100644
+--- a/src/lib/server/surprise-store.ts
++++ b/src/lib/server/surprise-store.ts
+@@ -1,6 +1,6 @@
+ import "server-only";
+ import { type AdminSurprise, type PublicSurprise, publicSnapshot, referencedAssets } from "../surprises";
+-import { hasSavedContent, includeTimelineMoments, mergePublicSections, startingContent } from "../public-surprises";
++import { hasSavedContent, includeSectionUpdates, mergePublicSections, startingContent } from "../public-surprises";
+ 
+ export class HttpError extends Error { constructor(public status: number, message: string) { super(message); } }
+ export const BUCKET = "private-surprises";
+@@ -37,7 +37,7 @@ export async function adminSections(): Promise<AdminSurprise[]> {
+   const rows: AdminSurprise[] = await response.json();
+   return rows.map((row) => {
+     const draft = hasSavedContent(row) ? row.draft : startingContent(row.id);
+-    return { ...row, draft: row.id === "timeline" ? includeTimelineMoments(draft) : draft };
++    return { ...row, draft: includeSectionUpdates(row.id, draft) };
+   });
+ }
+ export async function publicSections(): Promise<PublicSurprise[]> {
+diff --git a/src/lib/surprises.ts b/src/lib/surprises.ts
+index 619ff7d31b4393b9a710463a61362a035f8f489e..fe8dab9de63a2e90c4d9f3b64ab0103881e190bf 100644
+--- a/src/lib/surprises.ts
++++ b/src/lib/surprises.ts
+@@ -14,7 +14,7 @@ export type SurpriseItem = {
+   id: string; title: string; text: string; date: string; image: string; audio: string;
+   letter: string; done: boolean; x: number; y: number;
+ };
+-export type SurpriseContent = { title: string; intro: string; unlockAt: string; items: SurpriseItem[]; timelineRevision?: number };
++export type SurpriseContent = { title: string; intro: string; unlockAt: string; items: SurpriseItem[]; timelineRevision?: number; chaptersRevision?: number };
+ export type PublicSurprise = { id: SectionId; content: SurpriseContent; locked: boolean };
+ export type AdminSurprise = {
+   id: SectionId; draft: SurpriseContent; published: SurpriseContent | null;
+@@ -60,7 +60,8 @@ export function validateContent(value: unknown): SurpriseContent {
+     return { id, title: str(i.title, 160), text: str(i.text, 12000), date, image, audio, letter, done: i.done, x: i.x, y: i.y };
+   });
+   if (v.timelineRevision !== undefined && (typeof v.timelineRevision !== "number" || !Number.isSafeInteger(v.timelineRevision) || v.timelineRevision < 0)) throw new Error("Revisão da linha do tempo inválida.");
+-  return { title, intro, unlockAt, items, ...(v.timelineRevision === undefined ? {} : { timelineRevision: v.timelineRevision as number }) };
++  if (v.chaptersRevision !== undefined && (typeof v.chaptersRevision !== "number" || !Number.isSafeInteger(v.chaptersRevision) || v.chaptersRevision < 0)) throw new Error("Revisão dos próximos capítulos inválida.");
++  return { title, intro, unlockAt, items, ...(v.timelineRevision === undefined ? {} : { timelineRevision: v.timelineRevision as number }), ...(v.chaptersRevision === undefined ? {} : { chaptersRevision: v.chaptersRevision as number }) };
+ }
+ export function validatePublication(id: SectionId, content: SurpriseContent) {
+   if (!content.items.length) throw new Error("Adicione pelo menos um item antes de liberar.");

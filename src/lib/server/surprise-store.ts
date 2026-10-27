@@ -1,6 +1,6 @@
 import "server-only";
 import { type AdminSurprise, type PublicSurprise, publicSnapshot, referencedAssets } from "../surprises";
-import { hasSavedContent, includeTimelineMoments, mergePublicSections, startingContent } from "../public-surprises";
+import { hasSavedContent, includeSectionUpdates, mergePublicSections, startingContent } from "../public-surprises";
 
 export class HttpError extends Error { constructor(public status: number, message: string) { super(message); } }
 export const BUCKET = "private-surprises";
@@ -37,7 +37,7 @@ export async function adminSections(): Promise<AdminSurprise[]> {
   const rows: AdminSurprise[] = await response.json();
   return rows.map((row) => {
     const draft = hasSavedContent(row) ? row.draft : startingContent(row.id);
-    return { ...row, draft: row.id === "timeline" ? includeTimelineMoments(draft) : draft };
+    return { ...row, draft: includeSectionUpdates(row.id, draft) };
   });
 }
 export async function publicSections(): Promise<PublicSurprise[]> {

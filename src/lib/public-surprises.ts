@@ -8,6 +8,11 @@ function section(id: SectionId, values: Partial<SurpriseContent>): PublicSurpris
   return { id, locked: false, content: { ...emptyContent(id), ...values } };
 }
 const timelineRevision = 1;
+const chaptersRevision = 1;
+const nextChapters: SurpriseItem[] = [
+  item("concursados-juntos", { title: "Concursados ano que vem", text: "Se Deus quiser vamos ser concursados ano que vem" }),
+  item("praia-em-julho", { title: "Praia em julho", text: "Se Deus quiser vamos conhecer a praia em julho e comemorar que passamos no concurso em grande estilo juntos" }),
+];
 const addedTimelineMoments: SurpriseItem[] = [
   item("segundo-encontro", { title: "Nosso segundo encontro", date: "2026-07-03", text: "Quando saímos pela segunda vez em uma sexta." }),
   item("passeio-vaca-brava", { title: "Nosso passeio no Vaca Brava", date: "2026-07-09", text: "Dia 9 quando fizemos nosso passeio no parque vaca brava" }),
@@ -28,6 +33,14 @@ export function includeTimelineMoments(content: SurpriseContent): SurpriseConten
     items: [...content.items, ...structuredClone(missing)].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999")),
   };
 }
+// Update older saved content once; later edits in the panel stay intact.
+export function includeSectionUpdates(id: SectionId, content: SurpriseContent): SurpriseContent {
+  if (id === "timeline") return includeTimelineMoments(content);
+  if (id === "chapters" && (content.chaptersRevision ?? 0) < chaptersRevision) {
+    return { ...content, chaptersRevision, items: structuredClone(nextChapters) };
+  }
+  return content;
+}
 export const publicStartingSections: PublicSurprise[] = [
   section("timeline", { intro: "Cada pedacinho da nossa história merece ficar guardado.", timelineRevision, items: [
     item("nosso-comeco", { title: "O começo da nossa história", date: "2026-06-26", text: "Desde a nossa primeira conversa, eu senti uma conexão tão forte e inexplicável que logo me veio um pensamento: é ela." }),
@@ -41,10 +54,7 @@ export const publicStartingSections: PublicSurprise[] = [
   ] }),
   section("capsule", { intro: "Um lugar para guardar uma carta e reencontrar esse carinho no futuro." }),
   section("voice", { intro: "Um cantinho para os recados que também podem ser ouvidos." }),
-  section("chapters", { intro: "Ainda temos tanta história pela frente.", items: [
-    item("viajar-juntos", { title: "Conhecer novos lugares", text: "Quero crescer ao seu lado, construir a nossa história e viajar o mundo com você." }),
-    item("momentos-simples", { title: "Continuar vivendo os nossos momentos", text: "Um cantinho só nosso. Para guardar o que vivemos, lembrar do que sentimos e sonhar com o que vem." }),
-  ] }),
+  section("chapters", { intro: "Ainda temos tanta história pela frente.", chaptersRevision, items: nextChapters }),
   section("reasons", { intro: "Um detalhe seu de cada vez.", items: [
     item("seu-olhar", { title: "Seu olhar", text: "É incrível como o seu olhar é tão apaixonante… chega a me deixar todo bobinho e me faz esquecer de tudo ao redor." }),
     item("nossa-conexao", { title: "Nossa conexão", text: "A forma como a gente se entende, se apoia e combina em absolutamente tudo, com uma sintonia absurda." }),
@@ -61,6 +71,6 @@ export function hasSavedContent(row: Pick<AdminSurprise, "version" | "draft">) {
 export function mergePublicSections(overrides: PublicSurprise[]) {
   return sectionIds.map((id) => {
     const selected = overrides.find((entry) => entry.id === id) ?? publicStartingSections.find((entry) => entry.id === id)!;
-    return id === "timeline" ? { ...selected, content: includeTimelineMoments(selected.content) } : selected;
+    return { ...selected, content: includeSectionUpdates(id, selected.content) };
   });
 }
