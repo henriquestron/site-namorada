@@ -1,519 +1,110 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import Image from "next/image";
+import { useRef, useState } from "react";
+import { Icon } from "@/components/icon";
+import { Stars } from "@/components/stars";
+import { TogetherCounter } from "@/components/together-counter";
+import { MemoryAlbum } from "@/components/memory-album";
+import { OpenWhen } from "@/components/open-when";
+import { OurUniverse } from "@/components/our-universe";
 
-// --- COMPONENTE DA CHUVA DE ESTRELAS ---
-const Estrelas = () => {
-  const [estrelas, setEstrelas] = useState<{ id: number; x: number; y: number; size: number; duration: number; delay: number }[]>([]);
-  
-  useEffect(() => {
-    const novasEstrelas = Array.from({ length: 50 }).map((_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 3 + 1,
-      duration: Math.random() * 4 + 3,
-      delay: Math.random() * 5,
-    }));
-    setEstrelas(novasEstrelas);
-  }, []);
-
-  return (
-    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-      <style>{`
-        @keyframes animarEstrela {
-          0% { opacity: 0; transform: translateY(0) scale(0.5); }
-          50% { opacity: 0.8; transform: translateY(-20px) scale(1); }
-          100% { opacity: 0; transform: translateY(-40px) scale(0.5); }
-        }
-      `}</style>
-      {estrelas.map((estrela) => (
-        <div
-          key={estrela.id}
-          className="absolute bg-blue-100 rounded-full shadow-[0_0_10px_rgba(147,197,253,0.8)]"
-          style={{
-            left: `${estrela.x}%`,
-            top: `${estrela.y}%`,
-            width: `${estrela.size}px`,
-            height: `${estrela.size}px`,
-            animation: `animarEstrela ${estrela.duration}s infinite ease-in-out ${estrela.delay}s`,
-          }}
-        />
-      ))}
-    </div>
-  );
-};
-
-// --- COMPONENTE DO RELÓGIO BUGADO ---
-const RelogioBugado = () => {
-  const [texto, setTexto] = useState("00:00:00");
-  const caracteres = "0123456789§¥£¢∞≠?!@#$%";
-
-  useEffect(() => {
-    const intervalo = setInterval(() => {
-      if (Math.random() > 0.9) {
-        setTexto("19:09:26");
-      } else {
-        let baguncado = "";
-        for (let i = 0; i < 6; i++) {
-          baguncado += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-        }
-        setTexto(`${baguncado.substring(0,2)}:${baguncado.substring(2,4)}:${baguncado.substring(4,6)}`);
-      }
-    }, 70);
-    return () => clearInterval(intervalo);
-  }, []);
-
-  return (
-    <div className="font-mono text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 tracking-widest drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]">
-      {texto}
-    </div>
-  );
-};
-
-// --- PÁGINA PRINCIPAL ---
 export default function NossoSite() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [tempoJuntos, setTempoJuntos] = useState({ anos: 0, meses: 0, dias: 0, horas: 0, minutos: 0, segundos: 0 });
-  
-  const [diaDaSurpresaChegou, setDiaDaSurpresaChegou] = useState(false);
-  const [abrirSurpresa, setAbrirSurpresa] = useState(false);
-  
-  // Controle da Super Animação (0=Normal, 1=Tremendo, 2=Voando e Estrelas, 3=Flash, 4=Fim)
-  const [faseAnimacao, setFaseAnimacao] = useState(0); 
+  const audio = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [musicError, setMusicError] = useState("");
 
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const dataInicio = new Date(2026, 5, 26).getTime(); 
-
-  // Cronômetro normal
-  useEffect(() => {
-    const atualizarCronometro = () => {
-      const agora = new Date().getTime();
-      const diferenca = agora - dataInicio;
-      const segundos = Math.floor((diferenca / 1000) % 60);
-      const minutos = Math.floor((diferenca / 1000 / 60) % 60);
-      const horas = Math.floor((diferenca / (1000 * 60 * 60)) % 24);
-      const dias = Math.floor(diferenca / (1000 * 60 * 60 * 24));
-      const anos = Math.floor(dias / 365);
-      const meses = Math.floor((dias % 365) / 30);
-      const diasRestantes = (dias % 365) % 30;
-      setTempoJuntos({ anos, meses, dias: diasRestantes, horas, minutos, segundos });
-    };
-    const intervalo = setInterval(atualizarCronometro, 1000);
-    return () => clearInterval(intervalo);
-  }, [dataInicio]);
-
-  // Checagem da Data da Surpresa
-  useEffect(() => {
-    // ATENÇÃO: Está para 1 de Setembro (mês 8) para testar! 
-    // Troque para dia 20 depois de ver a animação.
-    const dataSurpresa = new Date(2026, 8, 20).getTime(); 
-
-    const verificarData = () => {
-      if (new Date().getTime() >= dataSurpresa) {
-        setDiaDaSurpresaChegou(true);
-      }
-    };
-    const intervalo = setInterval(verificarData, 1000);
-    return () => clearInterval(intervalo);
-  }, []);
-
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) audioRef.current.pause();
-      else audioRef.current.play();
-      setIsPlaying(!isPlaying);
+  async function toggleMusic() {
+    if (!audio.current) return;
+    setMusicError("");
+    if (!audio.current.paused) { audio.current.pause(); return; }
+    try {
+      audio.current.volume = 0.5;
+      await audio.current.play();
+    } catch {
+      setMusicError("Não consegui tocar agora. Tente dar o play de novo.");
     }
-  };
-
-  // A Lógica da Animação Cinematográfica
-  const dispararEfeitoColisao = () => {
-    setFaseAnimacao(1); // Fase 1: Tremer e Rachar (1.5 segundos)
-    
-    setTimeout(() => {
-      setFaseAnimacao(2); // Fase 2: Metades voam, Estrelas giram rápido (2.5 segundos)
-    }, 1500);
-
-    setTimeout(() => {
-      setFaseAnimacao(3); // Fase 3: A Colisão! Tela dá um flash branco
-    }, 4000);
-
-    setTimeout(() => {
-      setFaseAnimacao(4); // Limpa as peças quebradas
-      setAbrirSurpresa(true); // Aparece o modal
-    }, 4300);
-  };
-
-  // Transforma o conteúdo em uma função para evitar bugs de clique no React
-  const renderCaixaMisterio = () => (
-    <div className="w-full h-full bg-zinc-900/60 border border-cyan-500/50 backdrop-blur-md p-8 md:p-12 rounded-3xl shadow-[0_0_40px_rgba(34,211,238,0.15)] text-center relative flex flex-col justify-center items-center">
-      <div className="absolute inset-0 bg-cyan-500/5 animate-pulse rounded-3xl pointer-events-none"></div>
-      
-      <h2 className="text-2xl md:text-3xl font-semibold text-cyan-400 mb-4 tracking-wide flex items-center justify-center gap-3">
-        ⚠️ Anomalia Detectada 
-      </h2>
-      
-      <p className="text-zinc-300 text-lg font-light mb-8 max-w-xl">
-        Nossos radares captaram uma perturbação no espaço-tempo. Uma grande colisão de universos está prevista para acontecer, gerando uma energia nunca antes vista.
-      </p>
-
-      <div className="bg-black/40 py-6 px-4 rounded-xl border border-white/5 inline-block min-w-[250px] mb-8">
-        <RelogioBugado />
-      </div>
-      
-      <div className="bg-black/60 border border-cyan-500/30 rounded-lg p-5 font-mono text-left max-w-sm w-full mx-auto relative overflow-hidden shadow-[inset_0_0_20px_rgba(34,211,238,0.1)]">
-        <div className="absolute top-0 left-0 w-full h-0.5 bg-cyan-400/50 animate-pulse pointer-events-none"></div>
-        <p className="text-cyan-500/60 text-xs mb-2 uppercase tracking-wider">&gt; Rastreando singularidade...</p>
-        <div className="text-cyan-400 text-sm md:text-base animate-pulse space-y-1">
-          <p><span className="text-zinc-500">LAT:</span> 15°5?'??" S</p>
-          <p><span className="text-zinc-500">LON:</span> 48°4?'??" W</p>
-        </div>
-        <p className="text-cyan-500/60 text-xs mt-3 uppercase tracking-wider flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span> Epicentro Gravitacional
-        </p>
-      </div>
-
-      <p className="text-cyan-500/70 text-sm mt-8 font-mono uppercase tracking-widest animate-pulse">
-        Aguardando colisão do sistema...
-      </p>
-
-      {/* Botão Secreto */}
-      <div className={`mt-8 transition-opacity duration-300 w-full flex justify-center ${faseAnimacao === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        {diaDaSurpresaChegou && (
-          <button 
-            type="button"
-            onClick={dispararEfeitoColisao}
-            className="relative z-50 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 px-8 rounded-full shadow-[0_0_20px_rgba(34,211,238,0.5)] hover:shadow-[0_0_40px_rgba(34,211,238,0.8)] transition-all transform hover:scale-110 flex items-center gap-3 cursor-pointer"
-          >
-            <span>🔓</span> Acessar Relatório da Colisão
-          </button>
-        )}
-      </div>
-    </div>
-  );
+  }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-zinc-950 to-black text-gray-200 font-sans selection:bg-blue-500 selection:text-white relative overflow-hidden">
-      
-      {/* CSS CUSTOMIZADO PARA A ANIMAÇÃO DO BIG BANG */}
-      <style>{`
-        @keyframes shake-bruto {
-          0%, 100% { transform: translateX(0) rotate(0deg); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px) rotate(-1deg); }
-          20%, 40%, 60%, 80% { transform: translateX(5px) rotate(1deg); }
-        }
-        .animate-shake-bruto {
-          animation: shake-bruto 0.3s infinite;
-        }
-        
-        @keyframes orbitar-estrelas {
-          0% { transform: rotate(0deg) scale(1); width: 16rem; opacity: 0;}
-          10% { opacity: 1; }
-          100% { transform: rotate(1440deg) scale(0.1); width: 0rem; }
-        }
-        .animate-orbitar-estrelas {
-          animation: orbitar-estrelas 2.5s cubic-bezier(0.5, 0, 1, 1) forwards;
-        }
+    <div className="our-story" id="inicio">
+      <Stars />
+      <audio ref={audio} src="/musica.mp3" loop preload="none" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onError={() => { setPlaying(false); setMusicError("A nossa música não carregou. Tente novamente daqui a pouquinho."); }} />
+      <a className="skip-link" href="#conteudo">Ir para a nossa história</a>
 
-        @keyframes flash-branco {
-          0% { background-color: transparent; }
-          20% { background-color: white; }
-          100% { background-color: transparent; }
-        }
-        .animate-flash-branco {
-          animation: flash-branco 0.5s ease-out forwards;
-        }
-      `}</style>
+      <header className="site-header wrap">
+        <a className="wordmark" href="#inicio" aria-label="Vitor e Yasmin, início">V<span>&</span>Y<Icon name="star" width="13" height="13" /></a>
+        <nav aria-label="Navegação principal"><a href="#memorias">Memórias</a><a href="#cartinhas">Cartinhas</a><a href="#carta">Nossa carta</a></nav>
+        <button className={`header-music ${playing ? "is-playing" : ""}`} type="button" onClick={toggleMusic} aria-pressed={playing} aria-label={playing ? "Pausar nossa música" : "Tocar nossa música"}><Icon name={playing ? "pause" : "music"} width="17" height="17" /><span>Nossa música</span></button>
+      </header>
 
-      {/* O componente que chama as estrelas lá no fundo */}
-      <Estrelas />
-      
-      {/* Música Oculta */}
-      <audio ref={audioRef} loop src="/musica.mp3" />
-
-      {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center min-h-screen text-center px-4 relative z-10">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/15 rounded-full blur-[100px] pointer-events-none"></div>
-
-        <h1 className="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-500 mb-6 drop-shadow-lg z-10">
-          Nossa História 💙
-        </h1>
-        <p className="text-xl md:text-2xl text-zinc-400 mb-10 max-w-2xl z-10 font-light">
-          Um pequeno espaço no universo para guardar os nossos melhores momentos.
-        </p>
-        
-        <button 
-          onClick={togglePlay}
-          className="z-10 bg-blue-600/20 border border-blue-500/50 hover:bg-blue-600 hover:border-blue-600 text-blue-100 hover:text-white font-medium py-4 px-8 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] transition-all duration-300 transform hover:scale-105 flex items-center gap-3 backdrop-blur-md"
-        >
-          <span className="text-2xl">{isPlaying ? '⏸️' : '▶️'}</span>
-          {isPlaying ? 'Pausar nossa música' : 'Dê o play na nossa história'}
-        </button>
-      </section>
-
-      {/* Contador de Tempo */}
-      <section className="py-20 px-4 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-semibold text-blue-400 mb-8 tracking-wide">O tempo voa com você</h2>
-          <div className="flex flex-wrap justify-center gap-4 md:gap-8 text-xl md:text-2xl font-medium text-zinc-400">
-            <div className="bg-zinc-900/50 border border-white/5 backdrop-blur-md p-6 rounded-2xl shadow-xl min-w-[100px] hover:border-blue-500/40 transition-colors">
-              <span className="block text-4xl font-bold text-blue-500 mb-1">{tempoJuntos.anos}</span> Anos
-            </div>
-            <div className="bg-zinc-900/50 border border-white/5 backdrop-blur-md p-6 rounded-2xl shadow-xl min-w-[100px] hover:border-blue-500/40 transition-colors">
-              <span className="block text-4xl font-bold text-blue-500 mb-1">{tempoJuntos.meses}</span> Meses
-            </div>
-            <div className="bg-zinc-900/50 border border-white/5 backdrop-blur-md p-6 rounded-2xl shadow-xl min-w-[100px] hover:border-blue-500/40 transition-colors">
-              <span className="block text-4xl font-bold text-blue-500 mb-1">{tempoJuntos.dias}</span> Dias
-            </div>
-            <div className="bg-zinc-900/50 border border-white/5 backdrop-blur-md p-6 rounded-2xl shadow-xl min-w-[100px] hover:border-blue-500/40 transition-colors">
-              <span className="block text-4xl font-bold text-blue-500 mb-1">{tempoJuntos.horas}</span> Horas
-            </div>
+      <main id="conteudo">
+        <section className="hero wrap" aria-labelledby="hero-title">
+          <div className="hero-copy">
+            <p className="eyebrow"><span className="tiny-star">✦</span> O NOSSO PEQUENO UNIVERSO</p>
+            <h1 id="hero-title">De todos os caminhos,<br />o meu favorito<br />é com <em>você.</em></h1>
+            <p className="hero-description">Um cantinho só nosso. Para guardar o que vivemos,<br className="desktop-break" /> lembrar do que sentimos e sonhar com o que vem.</p>
+            <div className="hero-actions"><a className="button button-primary" href="#memorias">Passear pelas nossas memórias <Icon name="arrow" width="18" height="18" /></a><button className="music-link" type="button" onClick={toggleMusic} aria-pressed={playing}><span className="play-circle"><Icon name={playing ? "pause" : "play"} width="15" height="15" /></span>{playing ? "Pausar nossa música" : "Dê o play na nossa história"}</button></div>
+            <div className="hero-dedication"><span className="dedication-line" /><p>De Vitor, para Yasmin.<span>Com todo o meu amor, sempre.</span></p><Icon name="heart" width="23" height="23" /></div>
           </div>
-        </div>
-      </section>
-
-      {/* Galeria de Fotos - Carrossel */}
-      <section className="py-20 px-4 relative z-10">
-        <h2 className="text-3xl font-semibold text-blue-400 text-center mb-12 tracking-wide">Nossos Momentos</h2>
-        
-        {/* Container do Carrossel com scroll horizontal */}
-        <div 
-          className="max-w-6xl mx-auto flex overflow-x-auto snap-x snap-mandatory gap-6 pb-10 px-4"
-          style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(59,130,246,0.5) transparent' }}
-        >
-          {[
-            // === MUDE AS FOTOS E OS TEXTOS AQUI ===
-            { src: '/foto1.jpg', title: 'Um encontro' },
-            { src: '/foto2.jpg', title: 'Sempre juntos' },
-            { src: '/foto3.jpg', title: 'Um momento especial' },
-            { src: '/foto4.jpg', title: 'Nossas aventuras' },
-            { src: '/foto5.jpg', title: 'Academia juntos' },
-            { src: '/foto6.jpg', title: 'Nossos momentos' },
-            { src: '/foto7.jpg', title: 'Minha Vida ❤❤' },
-            { src: '/foto8.jpg', title: 'Meu Amor ❤' },
-            // Para adicionar mais, é só copiar a linha de cima e mudar o número da foto!
-          ].map((foto, index) => (
-            <div 
-              key={index} 
-              className="group min-w-[280px] md:min-w-[320px] shrink-0 snap-center overflow-hidden rounded-2xl bg-zinc-900/40 border border-white/5 p-2 transition-all hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] backdrop-blur-sm cursor-pointer"
-            >
-              <div className="overflow-hidden rounded-xl flex justify-center bg-black/20 h-[300px] md:h-[400px]">
-                <img 
-                  src={foto.src} 
-                  alt={foto.title} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out" 
-                />
-              </div>
-              <p className="text-center mt-4 mb-2 text-zinc-300 font-medium">{foto.title}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Motivos */}
-      <section className="py-20 px-4 relative z-10">
-        <h2 className="text-3xl font-semibold text-blue-400 text-center mb-12 tracking-wide">
-          Por que eu amo você?
-        </h2>
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="group bg-zinc-900/40 border border-white/5 p-6 rounded-2xl text-center hover:border-blue-500/50 hover:bg-blue-900/20 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]">
-            <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🥰</div>
-            <h3 className="text-xl text-zinc-200 font-medium mb-2">Seu olhar</h3>
-            <p className="text-zinc-400 font-light text-sm">
-              É incrível como o seu olhar é tão apaixonante... chega a me deixar todo bobinho e me faz esquecer de tudo ao redor.
-            </p>
+          <div className="hero-art">
+            <span className="photo-orbit photo-orbit-one" aria-hidden="true" /><span className="photo-orbit photo-orbit-two" aria-hidden="true" />
+            <span className="hero-spark spark-one" aria-hidden="true">✧</span><span className="hero-spark spark-two" aria-hidden="true">✦</span>
+            <figure className="hero-polaroid"><div className="hero-photo"><Image src="/memorias/foto-pedido.webp" alt="Vitor e Yasmin sorrindo e mostrando as alianças em Corumbá de Goiás" fill sizes="(max-width: 640px) 80vw, (max-width: 1000px) 45vw, 390px" preload /></div><figcaption>A minha melhor escolha. <span>💙</span></figcaption></figure>
+            <div className="photo-stamp"><Icon name="orbit" width="22" height="22" /><span>duas estrelas,<br /><strong>o mesmo universo.</strong></span></div>
+            <span className="photo-note">o nosso sim, em Corumbá</span>
           </div>
-          <div className="group bg-zinc-900/40 border border-white/5 p-6 rounded-2xl text-center hover:border-blue-500/50 hover:bg-blue-900/20 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]">
-            <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🧩</div>
-            <h3 className="text-xl text-zinc-200 font-medium mb-2">Nossa conexão</h3>
-            <p className="text-zinc-400 font-light text-sm">
-              A forma como a gente se entende, se apoia e combina em absolutamente tudo, com uma sintonia absurda.
-            </p>
+          <a href="#tempo" className="scroll-invitation"><span>A HISTÓRIA CONTINUA</span><Icon name="down" width="16" height="16" /></a>
+        </section>
+
+        <section className="time-section wrap" id="tempo" aria-labelledby="time-title">
+          <div className="time-intro"><p className="eyebrow">DESDE 26 DE JUNHO DE 2026</p><h2 id="time-title">O tempo voa <em>com você.</em></h2><p>E eu quero cada segundo que ainda vem.</p></div>
+          <TogetherCounter />
+          <span className="time-footnote"><span className="live-dot" /> A nossa história continua sendo escrita.</span>
+        </section>
+
+        <section className="section wrap" id="memorias" aria-labelledby="memories-title">
+          <div className="section-heading"><div><p className="eyebrow">PEDACINHOS DA NOSSA VIDA</p><h2 id="memories-title">Se eu pudesse<br /><em>guardar o tempo.</em></h2></div><p>Cada foto tem um pouco da gente.<br />E uma vontade enorme de viver tudo de novo.</p></div>
+          <MemoryAlbum />
+        </section>
+
+        <section className="reasons-section wrap" aria-labelledby="reasons-title">
+          <div className="reasons-intro"><p className="eyebrow">ENTRE TANTOS MOTIVOS</p><h2 id="reasons-title">Eu amo <em>o seu jeito.</em></h2></div>
+          <div className="reasons-grid">
+            <article><Icon name="star" /><h3>Seu olhar</h3><p>É incrível como o seu olhar é tão apaixonante… chega a me deixar todo bobinho e me faz esquecer de tudo ao redor.</p></article>
+            <article><Icon name="orbit" /><h3>Nossa conexão</h3><p>A forma como a gente se entende, se apoia e combina em absolutamente tudo, com uma sintonia absurda.</p></article>
+            <article><Icon name="heart" /><h3>Seu jeitinho</h3><p>A maneira única como você enxerga a vida e cuida de mim, me fazendo querer ser alguém melhor todos os dias.</p></article>
           </div>
-          <div className="group bg-zinc-900/40 border border-white/5 p-6 rounded-2xl text-center hover:border-blue-500/50 hover:bg-blue-900/20 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]">
-            <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">❤️</div>
-            <h3 className="text-xl text-zinc-200 font-medium mb-2">Seu jeitinho</h3>
-            <p className="text-zinc-400 font-light text-sm">
-              A maneira única como você enxerga a vida e cuida de mim, me fazendo querer ser alguém melhor todos os dias.
-            </p>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Música do Zezé */}
-      <section className="py-20 px-4 relative z-10">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl font-semibold text-blue-400 mb-8 tracking-wide">
-            A Nossa Trilha Sonora 🎵
-          </h2>
-          <div className="bg-zinc-900/50 border border-white/5 backdrop-blur-md p-8 md:p-12 rounded-3xl shadow-[0_0_20px_rgba(59,130,246,0.1)] hover:border-blue-500/30 transition-colors">
-            <h3 className="text-2xl text-zinc-200 font-medium mb-1">Pra Mudar A Minha Vida</h3>
-            <p className="text-blue-500/80 mb-8 font-light">Zezé Di Camargo & Luciano</p>
-            <div className="space-y-6 text-zinc-300 italic leading-relaxed font-light text-lg">
-              <p>
-                Você chegou, me deixou sem saída<br />
-                Me fez te querer quando eu não mais queria<br />
-                Você me fez amar quando eu dizia não<br />
-                E acreditar que no seu coração<br />
-                Tinha o grande amor que eu sonhei um dia
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+        <section className="section letters-section" id="cartinhas" aria-labelledby="letters-title"><div className="wrap">
+          <div className="section-heading"><div><p className="eyebrow">DEIXEI UM CARINHO PRA VOCÊ</p><h2 id="letters-title">Tem palavras que<br /><em>também abraçam.</em></h2></div><p>Quatro cartinhas, feitas pra você.<br />Abra a que o seu coração estiver pedindo hoje.</p></div>
+          <OpenWhen />
+          <p className="letters-footnote">Pode abrir quantas vezes quiser. O amor aqui não acaba. <Icon name="heart" width="13" height="13" /></p>
+        </div></section>
 
-      {/* Carta de Amor */}
-      <section className="py-20 px-4 relative z-10">
-        <div className="max-w-3xl mx-auto bg-zinc-900/60 border border-blue-500/30 backdrop-blur-md p-8 md:p-12 rounded-3xl shadow-[0_0_30px_rgba(59,130,246,0.1)] relative overflow-hidden">
-          <div className="absolute -top-6 -left-2 text-9xl text-blue-500/10 font-serif pointer-events-none">"</div>
-          <h2 className="text-3xl font-semibold text-blue-400 mb-6 text-center tracking-wide">
-            Para a mulher da minha vida
-          </h2>
-          <div className="space-y-6 text-zinc-300 text-lg leading-relaxed font-light">
-            <p>
-              Meu amor, criei este espaço para tentar mostrar pelo menos uma fração do quanto eu te amo. Desde a nossa primeira conversa, eu senti uma conexão tão forte e inexplicável que logo me veio um pensamento: é ela.
-            </p>
-            <p>
-              É com ela que eu quero dividir a minha vida. Quero crescer ao seu lado, construir a nossa história e viajar o mundo com você. 
-            </p>
-            <p>
-              A cada dia que passa, me apaixono ainda mais por você. O quanto combinamos, os nossos gostos, aquele modão raiz que a gente escuta juntos, meu Deus...
-            </p>
-            <p>
-              É incrível como todas as vezes que a gente sai junto, é uma saída melhor que a outra. Se eu pudesse parar o tempo pra não passar tão rápido, ficaríamos por dias juntinhos.
-            </p>
-            <p>
-              Sempre vou estar com você. Meu amor por você sempre vai ser imenso, e aumentando cada dia mais.
-            </p>
-            <p className="font-medium text-blue-300">
-              Eu te amo demais, meu amor.
-            </p>
-          </div>
-          <div className="mt-10 text-right">
-            <p className="text-blue-400 text-xl font-medium">Com todo o meu amor,</p>
-            <p className="text-2xl text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 font-bold mt-2">
-              Vitor
-            </p>
-          </div>
-        </div>
-      </section>
+        <section className="soundtrack-section wrap" aria-labelledby="soundtrack-title">
+          <div className={`record-player ${playing ? "is-playing" : ""}`} aria-hidden="true"><div className="vinyl"><span>V<span>&</span>Y</span></div><span className="record-spark">✧</span></div>
+          <div className="soundtrack-copy"><p className="eyebrow">TEM MÚSICA QUE É UM LUGAR</p><h2 id="soundtrack-title">A nossa <em>trilha sonora.</em></h2><h3>Pra Mudar A Minha Vida</h3><span className="song-artist">Zezé Di Camargo & Luciano</span><p>Aquele modão, a nossa sintonia e a vontade de ficar juntinhos.<br />Tem coisas que uma música guarda melhor que qualquer palavra.</p><button className="button button-outline" type="button" onClick={toggleMusic} aria-pressed={playing}><Icon name={playing ? "pause" : "play"} width="17" height="17" />{playing ? "Pausar a nossa música" : "Ouvir a nossa música"}</button></div>
+        </section>
 
-      {/* SEÇÃO DA ANOMALIA COM A MEGA ANIMAÇÃO */}
-      <section className="py-20 px-4 relative z-10">
-        <div className="max-w-2xl mx-auto relative">
-          
-          {/* Caixa Fantasma (Serve apenas para manter a altura do site e não dar tranco quando a original quebrar) */}
-          <div className="opacity-0 pointer-events-none">
-            {renderCaixaMisterio()}
-          </div>
+        <section className="section wrap" id="carta" aria-labelledby="love-title">
+          <div className="love-letter"><div className="love-letter-margin" aria-hidden="true"><Icon name="heart" width="27" height="27" /><span>COM AMOR, VITOR</span></div><article className="love-letter-content"><p className="eyebrow">PARA LER COM O CORAÇÃO</p><h2 id="love-title">Para a mulher<br /><em>da minha vida.</em></h2><div className="love-letter-text">
+            <p>Meu amor, criei este espaço para tentar mostrar pelo menos uma fração do quanto eu te amo. Desde a nossa primeira conversa, eu senti uma conexão tão forte e inexplicável que logo me veio um pensamento: é ela.</p>
+            <p>É com ela que eu quero dividir a minha vida. Quero crescer ao seu lado, construir a nossa história e viajar o mundo com você.</p>
+            <p>A cada dia que passa, me apaixono ainda mais por você. O quanto combinamos, os nossos gostos, aquele modão raiz que a gente escuta juntos, meu Deus…</p>
+            <p>É incrível como todas as vezes que a gente sai junto, é uma saída melhor que a outra. Se eu pudesse parar o tempo pra não passar tão rápido, ficaríamos por dias juntinhos.</p>
+            <p>Sempre vou estar com você. Meu amor por você sempre vai ser imenso, e aumentando cada dia mais.</p>
+            <p className="letter-emphasis">Eu te amo demais, meu amor.</p>
+          </div><p className="letter-signoff">Com todo o meu amor,<span>Vitor</span></p></article><span className="letter-corner-star" aria-hidden="true">✧</span></div>
+        </section>
 
-          {/* ESTADO 0: A caixa normal intacta */}
-          {faseAnimacao === 0 && (
-            <div className="absolute inset-0 z-20">
-              {renderCaixaMisterio()}
-            </div>
-          )}
+        <section className="section wrap universe-section" id="universo" aria-label="O nosso encontro de universos"><OurUniverse /></section>
+      </main>
 
-          {/* ESTADO 1 e 2: O Caos Acontece */}
-          {faseAnimacao === 1 || faseAnimacao === 2 ? (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              
-              {/* AS ESTRELAS DO SISTEMA BINÁRIO (Aparecem atrás da caixa na fase 2) */}
-              {faseAnimacao === 2 && (
-                <div className="absolute inset-0 flex items-center justify-center z-0">
-                  <div className="flex items-center justify-between animate-orbitar-estrelas">
-                    <div className="w-10 h-10 md:w-16 md:h-16 bg-cyan-400 rounded-full shadow-[0_0_60px_cyan]"></div>
-                    <div className="w-10 h-10 md:w-16 md:h-16 bg-rose-400 rounded-full shadow-[0_0_60px_pink]"></div>
-                  </div>
-                </div>
-              )}
-
-              {/* METADE ESQUERDA (Com o corte em zigue-zague parecendo rachadura) */}
-              <div 
-                className={`absolute inset-0 z-10 transition-transform duration-1000 ease-in-out 
-                  ${faseAnimacao === 1 ? 'animate-shake-bruto' : '-translate-x-[60vw] -translate-y-[10vh] -rotate-12 opacity-0'}`} 
-                style={{ clipPath: 'polygon(0 0, 52% 0, 48% 100%, 0 100%)' }}
-              >
-                {renderCaixaMisterio()}
-                
-                {/* O Brilho da Rachadura vazando (Só na Fase 1) */}
-                {faseAnimacao === 1 && (
-                  <div className="absolute top-0 bottom-0 left-[48%] w-2 bg-cyan-200 shadow-[0_0_30px_cyan] animate-pulse"></div>
-                )}
-              </div>
-
-              {/* METADE DIREITA (Com o outro lado do corte) */}
-              <div 
-                className={`absolute inset-0 z-10 transition-transform duration-1000 ease-in-out 
-                  ${faseAnimacao === 1 ? 'animate-shake-bruto' : 'translate-x-[60vw] translate-y-[10vh] rotate-12 opacity-0'}`} 
-                style={{ clipPath: 'polygon(52% 0, 100% 0, 100% 100%, 48% 100%)' }}
-              >
-                {renderCaixaMisterio()}
-              </div>
-
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      {/* FASE 3: O GRANDE FLASH BRANCO DA COLISÃO */}
-      {faseAnimacao === 3 && (
-        <div className="fixed inset-0 z-[100] animate-flash-branco pointer-events-none"></div>
-      )}
-
-      {/* POP-UP DA SURPRESA (MODAL FINAL) */}
-      {abrirSurpresa && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="max-w-xl w-full max-h-[90vh] overflow-y-auto bg-zinc-900 border border-cyan-500 rounded-3xl p-5 md:p-8 text-center shadow-[0_0_50px_rgba(34,211,238,0.3)] relative transform transition-all">
-            
-            <button 
-              onClick={() => { setAbrirSurpresa(false); setFaseAnimacao(0); }}
-              className="absolute top-3 right-4 text-zinc-500 hover:text-cyan-400 text-3xl transition-colors"
-            >
-              &times;
-            </button>
-
-            <div className="text-5xl md:text-6xl mb-4 animate-bounce mt-4 md:mt-0">👩‍❤️‍👨</div>
-            
-            <h2 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
-              Colisão Concluída!
-            </h2>
-            
-            <p className="text-zinc-300 text-base md:text-lg font-light mb-6">
-              O evento gravitacional em Corumbá de Goiás foi um sucesso absoluto. Nossas trajetórias se alinharam perfeitamente.
-            </p>
-
-            <div className="bg-black/50 border border-cyan-500/30 rounded-xl p-3 md:p-4 inline-block mb-6 shadow-[inset_0_0_15px_rgba(34,211,238,0.1)]">
-              <p className="text-cyan-400 font-mono text-lg md:text-xl uppercase tracking-widest font-bold">
-                Novo Status: Namorados
-              </p>
-            </div>
-
-            <div className="bg-blue-900/10 border border-blue-500/20 p-4 rounded-xl mb-6 text-left">
-              <p className="text-blue-300 text-xs md:text-sm font-light italic">
-                "Na astronomia, quando duas estrelas se encontram e passam a orbitar o mesmo centro gravitacional, elas formam um <strong className="text-cyan-400 font-medium">Sistema Estelar Binário</strong>. A partir de ontem, deixamos de viajar sozinhos pelo espaço."
-              </p>
-            </div>
-
-            <div className="border-2 border-dashed border-cyan-500/30 rounded-xl p-4 md:p-6 bg-black/20 group hover:border-cyan-500/60 transition-colors">
-              <p className="text-cyan-500/60 font-mono text-[10px] md:text-xs uppercase tracking-widest mb-2">
-                [ Evidência Fotográfica do Sistema Binário ]
-              </p>
-              <div className="h-32 md:h-40 flex items-center justify-center">
-                <p className="text-zinc-500 text-xs md:text-sm italic px-2">
-                  (Inserir aqui a nossa primeira foto oficial tirada em Corumbá!)
-                </p>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* Rodapé */}
-      <footer className="text-center py-10 text-zinc-500 font-medium border-t border-white/5 relative z-10">
-        Feito com muito 💙
-      </footer>
+      <footer className="site-footer wrap"><a className="wordmark" href="#inicio" aria-label="Voltar ao início">V<span>&</span>Y</a><p>Um pequeno espaço no universo.<br /><span>Um amor que não cabe nele.</span></p><span className="footer-love">Feito com muito <Icon name="heart" width="14" height="14" /></span></footer>
+      {playing && <button className="floating-player" type="button" onClick={toggleMusic} aria-label="Pausar nossa música"><span className="equalizer" aria-hidden="true"><i /><i /><i /><i /></span><span>A nossa música<span>Pra Mudar A Minha Vida</span></span><Icon name="pause" width="16" height="16" /></button>}
+      {musicError && <div className="music-error" role="status">{musicError}<button type="button" onClick={() => setMusicError("")} aria-label="Fechar aviso"><Icon name="close" width="16" height="16" /></button></div>}
     </div>
   );
 }
