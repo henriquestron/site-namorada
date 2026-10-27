@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { publicStartingSections, mergePublicSections, hasSavedContent, startingContent } from "../src/lib/public-surprises.ts";
+import { publicStartingSections, mergePublicSections, hasSavedContent, startingContent, includeTimelineMoments } from "../src/lib/public-surprises.ts";
 import { emptyContent, mediaUrl, publicSnapshot, sectionIds, validateContent } from "../src/lib/surprises.ts";
 
 test("all six sections exist before any database or password is configured", () => {
@@ -33,4 +33,29 @@ test("capsule is public without a schedule; an explicitly scheduled future lette
   assert.equal(publicSnapshot("capsule", content).locked, false);
   content.unlockAt = "2099-01-01T03:00:00Z";
   assert.equal(publicSnapshot("capsule", content).locked, true);
+});
+test("older saved timelines keep their own edits while receiving the new moments in date order", () => {
+  const original = startingContent("timeline");
+  const old = { ...original, title: "My own timeline", items: [original.items.at(-1), { ...original.items[0], text: "My edited beginning" }] };
+  delete old.timelineRevision;
+  const snapshot = mergePublicSections([{ id: "timeline", content: old, locked: false }]).find((section) => section.id === "timeline");
+  assert.equal(snapshot.content.title, old.title);
+  assert.equal(snapshot.content.items[0].text, "My edited beginning");
+  assert.equal(snapshot.content.items.length, original.items.length);
+  assert.deepEqual(snapshot.content.items.map((entry) => entry.date), original.items.map((entry) => entry.date));
+  assert.equal(old.items.length, 2);
+});
+test("saving the timeline revision prevents duplicate additions and preserves later removals", () => {
+  const upgraded = includeTimelineMoments(emptyContent("timeline"));
+  const saved = validateContent(upgraded);
+  assert.deepEqual(includeTimelineMoments(saved), saved);
+  saved.items.pop();
+  assert.equal(includeTimelineMoments(saved).items.length, saved.items.length);
+});
+test("a manually added matching moment is preserved without a duplicate", () => {
+  const original = startingContent("timeline");
+  const savedItem = { ...original.items[1], id: "my-own-id" };
+  const updated = includeTimelineMoments({ ...emptyContent("timeline"), items: [savedItem] });
+  assert.equal(updated.items.filter((entry) => entry.date === savedItem.date).length, 1);
+  assert.equal(updated.items.find((entry) => entry.date === savedItem.date).id, "my-own-id");
 });

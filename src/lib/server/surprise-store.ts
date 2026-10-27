@@ -1,6 +1,6 @@
 import "server-only";
 import { type AdminSurprise, type PublicSurprise, publicSnapshot, referencedAssets } from "../surprises";
-import { hasSavedContent, mergePublicSections, startingContent } from "../public-surprises";
+import { hasSavedContent, includeTimelineMoments, mergePublicSections, startingContent } from "../public-surprises";
 
 export class HttpError extends Error { constructor(public status: number, message: string) { super(message); } }
 export const BUCKET = "private-surprises";
@@ -35,7 +35,10 @@ export async function rpc(name: string, input: object) {
 export async function adminSections(): Promise<AdminSurprise[]> {
   const response = await supabase("/rest/v1/surprise_sections?select=id,draft,published,version,published_at&order=id");
   const rows: AdminSurprise[] = await response.json();
-  return rows.map((row) => hasSavedContent(row) ? row : { ...row, draft: startingContent(row.id) });
+  return rows.map((row) => {
+    const draft = hasSavedContent(row) ? row.draft : startingContent(row.id);
+    return { ...row, draft: row.id === "timeline" ? includeTimelineMoments(draft) : draft };
+  });
 }
 export async function publicSections(): Promise<PublicSurprise[]> {
   if (!storageConfigured()) return mergePublicSections([]);

@@ -14,7 +14,7 @@ export type SurpriseItem = {
   id: string; title: string; text: string; date: string; image: string; audio: string;
   letter: string; done: boolean; x: number; y: number;
 };
-export type SurpriseContent = { title: string; intro: string; unlockAt: string; items: SurpriseItem[] };
+export type SurpriseContent = { title: string; intro: string; unlockAt: string; items: SurpriseItem[]; timelineRevision?: number };
 export type PublicSurprise = { id: SectionId; content: SurpriseContent; locked: boolean };
 export type AdminSurprise = {
   id: SectionId; draft: SurpriseContent; published: SurpriseContent | null;
@@ -59,7 +59,8 @@ export function validateContent(value: unknown): SurpriseContent {
     if (typeof i.done !== "boolean" || typeof i.x !== "number" || typeof i.y !== "number" || !Number.isFinite(i.x) || !Number.isFinite(i.y) || i.x < 3 || i.x > 97 || i.y < 3 || i.y > 97) throw new Error("Posição da estrela inválida (3 a 97%).");
     return { id, title: str(i.title, 160), text: str(i.text, 12000), date, image, audio, letter, done: i.done, x: i.x, y: i.y };
   });
-  return { title, intro, unlockAt, items };
+  if (v.timelineRevision !== undefined && (typeof v.timelineRevision !== "number" || !Number.isSafeInteger(v.timelineRevision) || v.timelineRevision < 0)) throw new Error("Revisão da linha do tempo inválida.");
+  return { title, intro, unlockAt, items, ...(v.timelineRevision === undefined ? {} : { timelineRevision: v.timelineRevision as number }) };
 }
 export function validatePublication(id: SectionId, content: SurpriseContent) {
   if (!content.items.length) throw new Error("Adicione pelo menos um item antes de liberar.");

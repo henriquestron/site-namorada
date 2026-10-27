@@ -1,0 +1,135 @@
+diff --git a/src/lib/public-surprises.ts b/src/lib/public-surprises.ts
+index 9f30f8435df37cb2017169958fc1713cd8f5a2d5..4bcbca898f107a9d36d57b884d9eb0506f29c11c 100644
+--- a/src/lib/public-surprises.ts
++++ b/src/lib/public-surprises.ts
+@@ -7,9 +7,31 @@ function item(id: string, values: Partial<SurpriseItem>): SurpriseItem { return
+ function section(id: SectionId, values: Partial<SurpriseContent>): PublicSurprise {
+   return { id, locked: false, content: { ...emptyContent(id), ...values } };
+ }
++const timelineRevision = 1;
++const addedTimelineMoments: SurpriseItem[] = [
++  item("segundo-encontro", { title: "Nosso segundo encontro", date: "2026-07-03", text: "Quando saímos pela segunda vez em uma sexta." }),
++  item("passeio-vaca-brava", { title: "Nosso passeio no Vaca Brava", date: "2026-07-09", text: "Dia 9 quando fizemos nosso passeio no parque vaca brava" }),
++  item("primeira-academia-juntos", { title: "A primeira academia juntos", date: "2026-07-11", text: "Dia 11 primeira vez que fomos para a academia juntos" }),
++  item("conhecendo-sua-familia", { title: "Conhecendo sua família", date: "2026-08-07", text: "Dia 7 de agosto a primeira vez que conheci a sua família e sua mãe me chamou de genro a primeira vez kkkkkk" }),
++  item("festa-da-familia", { title: "Nossa festa da família", date: "2026-09-07", text: "Dia 7 de setembro quando vc conheceu a família toda da minha mãe na festa da família" }),
++];
++
++// Bring these five moments into previously saved timelines once. Persisting the revision
++// lets later edits and removals in the panel remain intentional, without resurrecting items.
++export function includeTimelineMoments(content: SurpriseContent): SurpriseContent {
++  if ((content.timelineRevision ?? 0) >= timelineRevision) return content;
++  const missing = addedTimelineMoments.filter((addition) => !content.items.some((saved) =>
++    saved.id === addition.id || (saved.date === addition.date && (saved.title === addition.title || saved.text.trim() === addition.text.trim()))));
++  return {
++    ...content,
++    timelineRevision,
++    items: [...content.items, ...structuredClone(missing)].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999")),
++  };
++}
+ export const publicStartingSections: PublicSurprise[] = [
+-  section("timeline", { intro: "Cada pedacinho da nossa história merece ficar guardado.", items: [
++  section("timeline", { intro: "Cada pedacinho da nossa história merece ficar guardado.", timelineRevision, items: [
+     item("nosso-comeco", { title: "O começo da nossa história", date: "2026-06-26", text: "Desde a nossa primeira conversa, eu senti uma conexão tão forte e inexplicável que logo me veio um pensamento: é ela." }),
++    ...addedTimelineMoments,
+     item("nosso-sim", { title: "O nosso sim, em Corumbá", date: "2026-09-19", text: letters.find((letter) => letter.id === "nos")!.paragraphs[0], image: "/memorias/foto-pedido.webp" }),
+   ] }),
+   section("stars", { intro: "Algumas estrelas guardam um carinho. Toque nelas para descobrir.", items: [
+@@ -37,5 +59,8 @@ export function hasSavedContent(row: Pick<AdminSurprise, "version" | "draft">) {
+   return row.version > 0 || row.draft.items.length > 0 || Boolean(row.draft.intro || row.draft.unlockAt);
+ }
+ export function mergePublicSections(overrides: PublicSurprise[]) {
+-  return sectionIds.map((id) => overrides.find((entry) => entry.id === id) ?? publicStartingSections.find((entry) => entry.id === id)!);
++  return sectionIds.map((id) => {
++    const selected = overrides.find((entry) => entry.id === id) ?? publicStartingSections.find((entry) => entry.id === id)!;
++    return id === "timeline" ? { ...selected, content: includeTimelineMoments(selected.content) } : selected;
++  });
+ }
+diff --git a/src/lib/server/surprise-store.ts b/src/lib/server/surprise-store.ts
+index 7a20c8e51f6b69b48d9e081666e952ec0dcb39da..ebe6f29b374c49a2a01bf214a9dbbc06f14ec4de 100644
+--- a/src/lib/server/surprise-store.ts
++++ b/src/lib/server/surprise-store.ts
+@@ -1,6 +1,6 @@
+ import "server-only";
+ import { type AdminSurprise, type PublicSurprise, publicSnapshot, referencedAssets } from "../surprises";
+-import { hasSavedContent, mergePublicSections, startingContent } from "../public-surprises";
++import { hasSavedContent, includeTimelineMoments, mergePublicSections, startingContent } from "../public-surprises";
+ 
+ export class HttpError extends Error { constructor(public status: number, message: string) { super(message); } }
+ export const BUCKET = "private-surprises";
+@@ -35,7 +35,10 @@ export async function rpc(name: string, input: object) {
+ export async function adminSections(): Promise<AdminSurprise[]> {
+   const response = await supabase("/rest/v1/surprise_sections?select=id,draft,published,version,published_at&order=id");
+   const rows: AdminSurprise[] = await response.json();
+-  return rows.map((row) => hasSavedContent(row) ? row : { ...row, draft: startingContent(row.id) });
++  return rows.map((row) => {
++    const draft = hasSavedContent(row) ? row.draft : startingContent(row.id);
++    return { ...row, draft: row.id === "timeline" ? includeTimelineMoments(draft) : draft };
++  });
+ }
+ export async function publicSections(): Promise<PublicSurprise[]> {
+   if (!storageConfigured()) return mergePublicSections([]);
+diff --git a/src/lib/surprises.ts b/src/lib/surprises.ts
+index 6cfa330d8d7452fe1485f50e0189e230e2ef0797..619ff7d31b4393b9a710463a61362a035f8f489e 100644
+--- a/src/lib/surprises.ts
++++ b/src/lib/surprises.ts
+@@ -14,7 +14,7 @@ export type SurpriseItem = {
+   id: string; title: string; text: string; date: string; image: string; audio: string;
+   letter: string; done: boolean; x: number; y: number;
+ };
+-export type SurpriseContent = { title: string; intro: string; unlockAt: string; items: SurpriseItem[] };
++export type SurpriseContent = { title: string; intro: string; unlockAt: string; items: SurpriseItem[]; timelineRevision?: number };
+ export type PublicSurprise = { id: SectionId; content: SurpriseContent; locked: boolean };
+ export type AdminSurprise = {
+   id: SectionId; draft: SurpriseContent; published: SurpriseContent | null;
+@@ -59,7 +59,8 @@ export function validateContent(value: unknown): SurpriseContent {
+     if (typeof i.done !== "boolean" || typeof i.x !== "number" || typeof i.y !== "number" || !Number.isFinite(i.x) || !Number.isFinite(i.y) || i.x < 3 || i.x > 97 || i.y < 3 || i.y > 97) throw new Error("Posição da estrela inválida (3 a 97%).");
+     return { id, title: str(i.title, 160), text: str(i.text, 12000), date, image, audio, letter, done: i.done, x: i.x, y: i.y };
+   });
+-  return { title, intro, unlockAt, items };
++  if (v.timelineRevision !== undefined && (typeof v.timelineRevision !== "number" || !Number.isSafeInteger(v.timelineRevision) || v.timelineRevision < 0)) throw new Error("Revisão da linha do tempo inválida.");
++  return { title, intro, unlockAt, items, ...(v.timelineRevision === undefined ? {} : { timelineRevision: v.timelineRevision as number }) };
+ }
+ export function validatePublication(id: SectionId, content: SurpriseContent) {
+   if (!content.items.length) throw new Error("Adicione pelo menos um item antes de liberar.");
+diff --git a/tests/public-content.test.mjs b/tests/public-content.test.mjs
+index bd322c9d231ece5fe61335ad3bd7e13046350099..9e53312f5cdcc53d42ddf5a4724f086c822e24b3 100644
+--- a/tests/public-content.test.mjs
++++ b/tests/public-content.test.mjs
+@@ -1,6 +1,6 @@
+ import test from "node:test";
+ import assert from "node:assert/strict";
+-import { publicStartingSections, mergePublicSections, hasSavedContent, startingContent } from "../src/lib/public-surprises.ts";
++import { publicStartingSections, mergePublicSections, hasSavedContent, startingContent, includeTimelineMoments } from "../src/lib/public-surprises.ts";
+ import { emptyContent, mediaUrl, publicSnapshot, sectionIds, validateContent } from "../src/lib/surprises.ts";
+ 
+ test("all six sections exist before any database or password is configured", () => {
+@@ -34,3 +34,28 @@ test("capsule is public without a schedule; an explicitly scheduled future lette
+   content.unlockAt = "2099-01-01T03:00:00Z";
+   assert.equal(publicSnapshot("capsule", content).locked, true);
+ });
++test("older saved timelines keep their own edits while receiving the new moments in date order", () => {
++  const original = startingContent("timeline");
++  const old = { ...original, title: "My own timeline", items: [original.items.at(-1), { ...original.items[0], text: "My edited beginning" }] };
++  delete old.timelineRevision;
++  const snapshot = mergePublicSections([{ id: "timeline", content: old, locked: false }]).find((section) => section.id === "timeline");
++  assert.equal(snapshot.content.title, old.title);
++  assert.equal(snapshot.content.items[0].text, "My edited beginning");
++  assert.equal(snapshot.content.items.length, original.items.length);
++  assert.deepEqual(snapshot.content.items.map((entry) => entry.date), original.items.map((entry) => entry.date));
++  assert.equal(old.items.length, 2);
++});
++test("saving the timeline revision prevents duplicate additions and preserves later removals", () => {
++  const upgraded = includeTimelineMoments(emptyContent("timeline"));
++  const saved = validateContent(upgraded);
++  assert.deepEqual(includeTimelineMoments(saved), saved);
++  saved.items.pop();
++  assert.equal(includeTimelineMoments(saved).items.length, saved.items.length);
++});
++test("a manually added matching moment is preserved without a duplicate", () => {
++  const original = startingContent("timeline");
++  const savedItem = { ...original.items[1], id: "my-own-id" };
++  const updated = includeTimelineMoments({ ...emptyContent("timeline"), items: [savedItem] });
++  assert.equal(updated.items.filter((entry) => entry.date === savedItem.date).length, 1);
++  assert.equal(updated.items.find((entry) => entry.date === savedItem.date).id, "my-own-id");
++});

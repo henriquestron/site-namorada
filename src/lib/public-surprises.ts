@@ -7,9 +7,31 @@ function item(id: string, values: Partial<SurpriseItem>): SurpriseItem { return 
 function section(id: SectionId, values: Partial<SurpriseContent>): PublicSurprise {
   return { id, locked: false, content: { ...emptyContent(id), ...values } };
 }
+const timelineRevision = 1;
+const addedTimelineMoments: SurpriseItem[] = [
+  item("segundo-encontro", { title: "Nosso segundo encontro", date: "2026-07-03", text: "Quando saímos pela segunda vez em uma sexta." }),
+  item("passeio-vaca-brava", { title: "Nosso passeio no Vaca Brava", date: "2026-07-09", text: "Dia 9 quando fizemos nosso passeio no parque vaca brava" }),
+  item("primeira-academia-juntos", { title: "A primeira academia juntos", date: "2026-07-11", text: "Dia 11 primeira vez que fomos para a academia juntos" }),
+  item("conhecendo-sua-familia", { title: "Conhecendo sua família", date: "2026-08-07", text: "Dia 7 de agosto a primeira vez que conheci a sua família e sua mãe me chamou de genro a primeira vez kkkkkk" }),
+  item("festa-da-familia", { title: "Nossa festa da família", date: "2026-09-07", text: "Dia 7 de setembro quando vc conheceu a família toda da minha mãe na festa da família" }),
+];
+
+// Bring these five moments into previously saved timelines once. Persisting the revision
+// lets later edits and removals in the panel remain intentional, without resurrecting items.
+export function includeTimelineMoments(content: SurpriseContent): SurpriseContent {
+  if ((content.timelineRevision ?? 0) >= timelineRevision) return content;
+  const missing = addedTimelineMoments.filter((addition) => !content.items.some((saved) =>
+    saved.id === addition.id || (saved.date === addition.date && (saved.title === addition.title || saved.text.trim() === addition.text.trim()))));
+  return {
+    ...content,
+    timelineRevision,
+    items: [...content.items, ...structuredClone(missing)].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999")),
+  };
+}
 export const publicStartingSections: PublicSurprise[] = [
-  section("timeline", { intro: "Cada pedacinho da nossa história merece ficar guardado.", items: [
+  section("timeline", { intro: "Cada pedacinho da nossa história merece ficar guardado.", timelineRevision, items: [
     item("nosso-comeco", { title: "O começo da nossa história", date: "2026-06-26", text: "Desde a nossa primeira conversa, eu senti uma conexão tão forte e inexplicável que logo me veio um pensamento: é ela." }),
+    ...addedTimelineMoments,
     item("nosso-sim", { title: "O nosso sim, em Corumbá", date: "2026-09-19", text: letters.find((letter) => letter.id === "nos")!.paragraphs[0], image: "/memorias/foto-pedido.webp" }),
   ] }),
   section("stars", { intro: "Algumas estrelas guardam um carinho. Toque nelas para descobrir.", items: [
@@ -37,5 +59,8 @@ export function hasSavedContent(row: Pick<AdminSurprise, "version" | "draft">) {
   return row.version > 0 || row.draft.items.length > 0 || Boolean(row.draft.intro || row.draft.unlockAt);
 }
 export function mergePublicSections(overrides: PublicSurprise[]) {
-  return sectionIds.map((id) => overrides.find((entry) => entry.id === id) ?? publicStartingSections.find((entry) => entry.id === id)!);
+  return sectionIds.map((id) => {
+    const selected = overrides.find((entry) => entry.id === id) ?? publicStartingSections.find((entry) => entry.id === id)!;
+    return id === "timeline" ? { ...selected, content: includeTimelineMoments(selected.content) } : selected;
+  });
 }
