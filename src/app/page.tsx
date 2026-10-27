@@ -52,8 +52,7 @@ export default function NossoSite() {
             <span className="photo-orbit photo-orbit-one" aria-hidden="true" /><span className="photo-orbit photo-orbit-two" aria-hidden="true" />
             <span className="hero-spark spark-one" aria-hidden="true">✧</span><span className="hero-spark spark-two" aria-hidden="true">✦</span>
             <figure className="hero-polaroid"><div className="hero-photo"><Image src="/memorias/foto-pedido.webp" alt="Vitor e Yasmin sorrindo e mostrando as alianças em Corumbá de Goiás" fill sizes="(max-width: 640px) 80vw, (max-width: 1000px) 45vw, 390px" preload /></div><figcaption>A minha melhor escolha. <span>💙</span></figcaption></figure>
-            <div className="photo-stamp"><Icon name="orbit" width="22" height="22" /><span>duas estrelas,<br /><strong>o mesmo universo.</strong></span></div>
-            <span className="photo-note">o nosso sim, em Corumbá</span>
+            <div className="hero-photo-details"><div className="photo-stamp"><Icon name="orbit" width="22" height="22" /><span>duas estrelas,<br /><strong>o mesmo universo.</strong></span></div><span className="photo-note">o nosso sim, em Corumbá</span></div>
           </div>
           <a href="#tempo" className="scroll-invitation"><span>A HISTÓRIA CONTINUA</span><Icon name="down" width="16" height="16" /></a>
         </section>

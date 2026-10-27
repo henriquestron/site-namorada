@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { type AdminSurprise, type SectionId, type SurpriseContent, type SurpriseItem, emptyItem, letterOptions, mediaUrl, sectionIds, sectionLabels } from "@/lib/surprises";
+import { type AdminSurprise, type SectionId, type SurpriseContent, type SurpriseItem, emptyItem, mediaUrl, sectionIds, sectionLabels } from "@/lib/surprises";
 import { Stars } from "./stars";
 import { Modal } from "./modal";
 import { SurpriseView } from "./surprise-view";
@@ -106,12 +106,12 @@ export function PrivateWorkshop({ authenticated, configured }: { authenticated: 
   return <div className="our-story workshop-page"><Stars />
     <header className="workshop-header wrap"><Link className="wordmark" href="/" onClick={(e) => { if (dirty && !window.confirm("Descartar alterações locais e voltar ao site?")) e.preventDefault(); }}>V<span>&</span>Y</Link><Link href="/" className="workshop-link" onClick={(e) => { if (dirty && !window.confirm("Descartar alterações locais e voltar ao site?")) e.preventDefault(); }}>Voltar ao nosso universo ↗</Link>{signedIn && <button type="button" className="button button-outline" onClick={signOut} disabled={pending}>Sair</button>}</header>
     {!signedIn ? <main className="workshop-login wrap">
-      <p className="eyebrow">PAINEL DE EDIÇÃO</p><h1>O que vem a seguir<br /><em>começa aqui.</em></h1><p>As novidades já estão públicas. Entre para editar os textos e adicionar fotos e áudios.</p>
+      <p className="eyebrow">PAINEL DE EDIÇÃO</p><h1>O que vem a seguir<br /><em>começa aqui.</em></h1><p>As novidades já estão públicas. Entre para editar os textos e adicionar fotos.</p>
       {!configured && <p className="workshop-alert" role="status">O painel ainda está fechado. Conclua a configuração descrita em CONFIGURAR_AREA_PRIVADA.md antes de entrar.</p>}
       <form onSubmit={signIn} method="post" action="/api/private/session"><label htmlFor="admin-password">Sua senha</label><input id="admin-password" name="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required maxLength={256} disabled={!configured || busy} /><button type="submit" className="button button-primary" disabled={!configured || busy}>{busy ? "Entrando…" : "Entrar no espaço privado"}</button></form>
       {error && <p className="workshop-alert" role="alert">{error}</p>}
     </main> : <main className="wrap workshop-main">
-      <div className="section-heading"><div><p className="eyebrow">FEITO NO SEU TEMPO</p><h1>Nos bastidores<br /><em>do nosso universo.</em></h1></div><p>As seis novidades estão públicas.<br />Salve para atualizar o site.</p></div>
+      <div className="section-heading"><div><p className="eyebrow">FEITO NO SEU TEMPO</p><h1>Nos bastidores<br /><em>do nosso universo.</em></h1></div><p>As novidades estão públicas.<br />Salve para atualizar o site.</p></div>
       <nav className="workshop-tabs" aria-label="Novidades">{sectionIds.map((id, i) => {
         return <button key={id} type="button" aria-current={active === id ? "page" : undefined} onClick={() => changeSection(id)} disabled={pending}><span>0{i + 1}</span><strong>{sectionLabels[id]}</strong><small>Pública</small></button>;
       })}</nav>
@@ -125,23 +125,20 @@ export function PrivateWorkshop({ authenticated, configured }: { authenticated: 
           <label>Texto de abertura<textarea value={draft.intro} maxLength={4000} rows={3} onChange={(e) => setDraft({ ...draft, intro: e.target.value })} /></label>
           {active === "capsule" && <label>Data e horário de abertura · horário de Goiás<input type="datetime-local" value={localDateTime(draft.unlockAt)} onChange={(e) => setDraft({ ...draft, unlockAt: e.target.value ? new Date(`${e.target.value}:00-03:00`).toISOString() : "" })} /><small>Opcional. Sem data, a carta fica aberta. Com uma data futura, a cápsula aparece no site e a carta abre no horário escolhido.</small></label>}
           <div className="workshop-item-list">{draft.items.map((item, index) => <article className="workshop-item" key={item.id}>
-            <div className="workshop-item-heading"><h3>{active === "reasons" ? "Motivo" : active === "stars" ? "Estrela" : "Item"} {String(index + 1).padStart(2, "0")}</h3><div><button type="button" aria-label={`Mover item ${index + 1} para cima`} disabled={pending || index === 0} onClick={() => { const items = [...draft.items]; [items[index - 1], items[index]] = [items[index], items[index - 1]]; setDraft({ ...draft, items }); }}>↑</button><button type="button" aria-label={`Mover item ${index + 1} para baixo`} disabled={pending || index === draft.items.length - 1} onClick={() => { const items = [...draft.items]; [items[index], items[index + 1]] = [items[index + 1], items[index]]; setDraft({ ...draft, items }); }}>↓</button><button type="button" onClick={() => { if (window.confirm("Remover este item do rascunho?")) setDraft({ ...draft, items: draft.items.filter((i) => i.id !== item.id) }); }}>Remover</button></div></div>
+            <div className="workshop-item-heading"><h3>{active === "reasons" ? "Motivo" : "Item"} {String(index + 1).padStart(2, "0")}</h3><div><button type="button" aria-label={`Mover item ${index + 1} para cima`} disabled={pending || index === 0} onClick={() => { const items = [...draft.items]; [items[index - 1], items[index]] = [items[index], items[index - 1]]; setDraft({ ...draft, items }); }}>↑</button><button type="button" aria-label={`Mover item ${index + 1} para baixo`} disabled={pending || index === draft.items.length - 1} onClick={() => { const items = [...draft.items]; [items[index], items[index + 1]] = [items[index + 1], items[index]]; setDraft({ ...draft, items }); }}>↓</button><button type="button" onClick={() => { if (window.confirm("Remover este item do rascunho?")) setDraft({ ...draft, items: draft.items.filter((i) => i.id !== item.id) }); }}>Remover</button></div></div>
             <label>Título<input value={item.title} maxLength={160} onChange={(e) => updateItem(index, { title: e.target.value })} /></label>
             <label>{active === "reasons" ? "O motivo, do seu jeito" : "Sua mensagem"}<textarea value={item.text} rows={5} maxLength={12000} onChange={(e) => updateItem(index, { text: e.target.value })} /></label>
             {(active === "timeline" || active === "chapters") && <label>{active === "timeline" ? "Data do marco" : "Data (opcional)"}<input type="date" value={item.date} onChange={(e) => updateItem(index, { date: e.target.value })} /></label>}
             {active === "chapters" && <label className="workshop-checkbox"><input type="checkbox" checked={item.done} onChange={(e) => updateItem(index, { done: e.target.checked })} />Este sonho já aconteceu</label>}
-            {active === "stars" && <div className="workshop-position"><label>Posição horizontal (%)<input type="number" min={3} max={97} value={item.x} onChange={(e) => updateItem(index, { x: Number(e.target.value) })} /></label><label>Posição vertical (%)<input type="number" min={3} max={97} value={item.y} onChange={(e) => updateItem(index, { y: Number(e.target.value) })} /></label></div>}
-            {active === "voice" && <label>Onde ouvir esta mensagem<select value={item.letter} onChange={(e) => updateItem(index, { letter: e.target.value })}>{letterOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>}
             {active !== "reasons" && <div className="workshop-uploads">
               <label>Foto · até 3 MB<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => { void upload(e.target.files?.[0], item.id, "image"); e.target.value = ""; }} /></label>
               {item.image && <div className="workshop-attachment">
                 {/* Private assets must bypass the public Next image optimizer. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={mediaUrl(item.image)} alt="Prévia da foto" /><button type="button" onClick={() => updateItem(index, { image: "" })}>Retirar foto</button></div>}
-              {(active === "voice" || active === "capsule" || active === "stars") && <><label>Seu áudio · até 3 MB<input type="file" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/ogg,audio/wav,audio/x-wav,audio/webm" onChange={(e) => { void upload(e.target.files?.[0], item.id, "audio"); e.target.value = ""; }} /></label>{item.audio && <div className="workshop-attachment"><audio controls preload="none" src={mediaUrl(item.audio)} /><button type="button" onClick={() => updateItem(index, { audio: "" })}>Retirar áudio</button></div>}</>}
             </div>}
           </article>)}</div>
-          <button className="button button-outline" type="button" disabled={pending || draft.items.length >= 100} onClick={() => setDraft({ ...draft, items: [...draft.items, emptyItem(crypto.randomUUID())] })}>+ Adicionar {active === "stars" ? "estrela" : active === "reasons" ? "motivo" : "item"}</button>
+          <button className="button button-outline" type="button" disabled={pending || draft.items.length >= 100} onClick={() => setDraft({ ...draft, items: [...draft.items, emptyItem(crypto.randomUUID())] })}>+ Adicionar {active === "reasons" ? "motivo" : "item"}</button>
         </fieldset>
         <div className="workshop-toolbar"><button type="button" className="button button-primary" onClick={() => setConfirm(true)} disabled={pending}>{busy ? "Salvando…" : uploading ? "Enviando arquivo…" : "Salvar no site"}</button><button type="button" className="button button-outline" onClick={() => setPreview(true)} disabled={pending}>Pré-visualizar</button></div>
       </>}

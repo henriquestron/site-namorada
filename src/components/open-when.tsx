@@ -4,7 +4,6 @@ import { useState } from "react";
 import { letters } from "@/lib/story";
 import { Icon } from "./icon";
 import { Modal } from "./modal";
-import { ReleasedLetterAudio } from "./released-surprises";
 
 export function OpenWhen() {
   const [active, setActive] = useState<string | null>(null);
@@ -27,7 +26,6 @@ export function OpenWhen() {
         <p className="eyebrow">UMA CARTINHA SÓ SUA</p>
         <h3 id="letter-title">Para quando<br /><em>{letter.title}.</em></h3>
         <div className="letter-paragraphs">{letter.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div>
-        <ReleasedLetterAudio key={letter.id} letterId={letter.id} />
         <p className="letter-signoff">Com todo o meu amor,<span>Vitor</span></p>
       </article>}
     </Modal>

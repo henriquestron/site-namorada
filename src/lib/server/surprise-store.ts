@@ -1,5 +1,5 @@
 import "server-only";
-import { type AdminSurprise, type PublicSurprise, publicSnapshot, referencedAssets } from "../surprises";
+import { type AdminSurprise, type PublicSurprise, isSectionId, publicSnapshot, referencedAssets } from "../surprises";
 import { hasSavedContent, includeSectionUpdates, mergePublicSections, startingContent } from "../public-surprises";
 
 export class HttpError extends Error { constructor(public status: number, message: string) { super(message); } }
@@ -35,7 +35,7 @@ export async function rpc(name: string, input: object) {
 export async function adminSections(): Promise<AdminSurprise[]> {
   const response = await supabase("/rest/v1/surprise_sections?select=id,draft,published,version,published_at&order=id");
   const rows: AdminSurprise[] = await response.json();
-  return rows.map((row) => {
+  return rows.filter((row) => isSectionId(row.id)).map((row) => {
     const draft = hasSavedContent(row) ? row.draft : startingContent(row.id);
     return { ...row, draft: includeSectionUpdates(row.id, draft) };
   });
@@ -46,7 +46,8 @@ export async function publicSections(): Promise<PublicSurprise[]> {
     // Public mode requested by Vitor: all saved section content is now visible.
     const response = await supabase("/rest/v1/surprise_sections?select=id,draft,version");
     const rows: Pick<AdminSurprise, "id" | "draft" | "version">[] = await response.json();
-    const snapshots = rows.filter(hasSavedContent).map((row) => publicSnapshot(row.id, row.draft))
+    const snapshots = rows.filter((row) => isSectionId(row.id)).filter(hasSavedContent)
+      .map((row) => publicSnapshot(row.id, includeSectionUpdates(row.id, row.draft)))
       .filter((row): row is PublicSurprise => row !== null);
     return mergePublicSections(snapshots);
   } catch { return mergePublicSections([]); }

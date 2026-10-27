@@ -1,6 +1,7 @@
 // Shared structure. Public starting content is in public-surprises.ts.
-export const sectionIds = ["timeline", "stars", "capsule", "voice", "chapters", "reasons"] as const;
-export type SectionId = typeof sectionIds[number];
+export const sectionIds = ["timeline", "capsule", "chapters", "reasons"] as const;
+// Keep legacy row types compatible with the existing database; only active IDs are exposed.
+export type SectionId = typeof sectionIds[number] | "stars" | "voice";
 export const sectionLabels: Record<SectionId, string> = {
   timeline: "Linha do tempo", stars: "Estrelas com segredos", capsule: "Cápsula do tempo",
   voice: "Mensagens com a sua voz", chapters: "Nossos próximos capítulos", reasons: "Um motivo para te amar",
@@ -14,14 +15,14 @@ export type SurpriseItem = {
   id: string; title: string; text: string; date: string; image: string; audio: string;
   letter: string; done: boolean; x: number; y: number;
 };
-export type SurpriseContent = { title: string; intro: string; unlockAt: string; items: SurpriseItem[]; timelineRevision?: number; chaptersRevision?: number };
+export type SurpriseContent = { title: string; intro: string; unlockAt: string; items: SurpriseItem[]; timelineRevision?: number; chaptersRevision?: number; capsuleRevision?: number };
 export type PublicSurprise = { id: SectionId; content: SurpriseContent; locked: boolean };
 export type AdminSurprise = {
   id: SectionId; draft: SurpriseContent; published: SurpriseContent | null;
   version: number; published_at: string | null;
 };
-export function isSectionId(value: unknown): value is SectionId {
-  return typeof value === "string" && sectionIds.includes(value as SectionId);
+export function isSectionId(value: unknown): value is typeof sectionIds[number] {
+  return typeof value === "string" && sectionIds.includes(value as typeof sectionIds[number]);
 }
 export function emptyContent(id: SectionId): SurpriseContent {
   return { title: sectionLabels[id], intro: "", unlockAt: "", items: [] };
@@ -61,7 +62,8 @@ export function validateContent(value: unknown): SurpriseContent {
   });
   if (v.timelineRevision !== undefined && (typeof v.timelineRevision !== "number" || !Number.isSafeInteger(v.timelineRevision) || v.timelineRevision < 0)) throw new Error("Revisão da linha do tempo inválida.");
   if (v.chaptersRevision !== undefined && (typeof v.chaptersRevision !== "number" || !Number.isSafeInteger(v.chaptersRevision) || v.chaptersRevision < 0)) throw new Error("Revisão dos próximos capítulos inválida.");
-  return { title, intro, unlockAt, items, ...(v.timelineRevision === undefined ? {} : { timelineRevision: v.timelineRevision as number }), ...(v.chaptersRevision === undefined ? {} : { chaptersRevision: v.chaptersRevision as number }) };
+  if (v.capsuleRevision !== undefined && (typeof v.capsuleRevision !== "number" || !Number.isSafeInteger(v.capsuleRevision) || v.capsuleRevision < 0)) throw new Error("Revisão da carta do futuro inválida.");
+  return { title, intro, unlockAt, items, ...(v.timelineRevision === undefined ? {} : { timelineRevision: v.timelineRevision as number }), ...(v.chaptersRevision === undefined ? {} : { chaptersRevision: v.chaptersRevision as number }), ...(v.capsuleRevision === undefined ? {} : { capsuleRevision: v.capsuleRevision as number }) };
 }
 export function validatePublication(id: SectionId, content: SurpriseContent) {
   if (!content.items.length) throw new Error("Adicione pelo menos um item antes de liberar.");
