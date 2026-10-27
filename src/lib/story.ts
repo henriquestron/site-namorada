@@ -19,33 +19,30 @@ export const letters = [
   {
     id: "saudade", title: "a saudade apertar", subtitle: "Um abraço em forma de palavras.", symbol: "heart" as const,
     paragraphs: [
-      "Meu amor, se você abriu essa cartinha porque está com saudade, imagina eu te puxando pra pertinho de mim agora. Daquele jeito que faz a gente querer ficar juntinho por horas.",
-      "Eu também queria conseguir parar o tempo quando estou com você. Enquanto não dá, deixei um pedacinho de mim aqui, pra você voltar sempre que quiser.",
-      "Coloca a nossa música, olha as nossas fotos e lembra: eu te amo muito, muito. Já estou querendo o nosso próximo abraço. 💙",
+      "Não há um momento em que eu não sinta saudades longe de você meu amor. Nossos momentos juntos são tão especiais que se eu pudesse pararia o tempo pra ficar junto com você. ",
+      "Quando estou com saudade de você ficou admirando as suas fotos e escutando as músicas que a gente escuta juntos",
+      "Te amo muito ❤️❤️❤️",
     ],
   },
   {
     id: "dia-dificil", title: "o dia estiver difícil", subtitle: "Você não precisa dar conta de tudo sozinha.", symbol: "star" as const,
     paragraphs: [
-      "Meu amor, respira um pouquinho. Queria estar aí agora pra te ouvir, fazer um carinho e ficar do seu lado.",
-      "Você não precisa fingir que está tudo bem comigo. Pode falar, pode chorar, pode só querer companhia. Eu quero dividir a vida com você, e isso inclui os dias que pesam também.",
-      "Se cuida com carinho hoje, tá? E me chama. Às vezes tudo o que a gente precisa é de alguém pertinho. Eu te amo. 💙",
+      "Sei que alguns dias podem ser difíceis pra você e eu te entendo. Tudo que você passou até hoje, me faz te admirar ainda mais, você é a mulher mais guerreira, paciente e gentil que eu já conheci, e por tudo que você passou, eu sei que vc vai conseguir superar esse dia difícil, e durante o dia e no final do dia, pode ter certeza que sempre vou estar junto de você e vou te receber com um beijo e um abraço apertadoo pra te animar meu amor",
+      "Te amo muitoooo ❤️❤️❤️",
     ],
   },
   {
     id: "sorriso", title: "precisar de um sorriso", subtitle: "Tem alguém todo bobinho por você.", symbol: "mail" as const,
     paragraphs: [
-      "Oi, meu amorrrr. Passando aqui só pra te lembrar que o seu olhar ainda me deixa todo bobinho. Sim, desse jeito mesmo que você está imaginando.",
-      "Eu gosto de pensar na gente ouvindo aquele modão, saindo juntos e querendo que o dia demore mais pra acabar. Você consegue deixar tudo tão bom.",
-      "Agora me manda um sorriso, nem que seja por foto, porque eu já fiquei com vontade de ver. Te amo muito, minha vida. 💙",
+      "Meu amorrrr, lembra que eu te falei que seu olhar e seu sorriso me deixam mais apaixonado por você, ééé, esse mesmo que vc tá dando agora atrás da tela do celular, meu Deusss que mulher 🤌🏻🤌🏻. ",
+      "Te amo muitooo minha morena cacheada linda ❤️❤️",
     ],
   },
   {
     id: "nos", title: "quiser lembrar de nós", subtitle: "Ainda temos tanta história pela frente.", symbol: "orbit" as const,
     paragraphs: [
-      "Desde a nossa primeira conversa, senti uma conexão tão forte que logo pensei: é ela. E é muito bom olhar pra tudo o que estamos construindo desde então.",
-      "Eu quero mais das nossas conversas, dos nossos passeios e dos momentos simples que ficam especiais porque são com você. Quero crescer do seu lado e realizar os nossos sonhos juntos.",
-      "Esse site é só um cantinho da nossa história. O resto eu quero continuar vivendo com você. Eu te amo demais, meu amor. 💙",
+      "Lembra do nosso passeio lá em Corumbá. Meu Deusss, foi o melhor dia com você meu amorrr. Um dia tão especial, e o dia do pedido de namoro naquela cachoeira perigosíssima chamada rasgão kkkkk. Foram tantos momentos meu amor junto de você desde a nossa primeira saída quando a gente se conheceu, tocando um trio parada dura logo de cara no carro. Quero viver isso com você pelo resto da vida meu amor ❤️❤️❤️",
+      "Te amo muito muito ❤️❤️",
     ],
   },
 ];

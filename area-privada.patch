@@ -1,0 +1,1310 @@
+diff --git a/.env.example b/.env.example
+new file mode 100644
+index 0000000000000000000000000000000000000000..365807a9c37b70d85c13127df90275e13affe8b4
+--- /dev/null
++++ b/.env.example
+@@ -0,0 +1,8 @@
++# Server only. Replace locally or in Vercel; never commit the filled-in file.
++# Copy to .env.local for local development. No NEXT_PUBLIC_ variables are used.
++APP_ORIGIN=http://localhost:3000
++SUPABASE_URL=https://YOUR_SEPARATE_PROJECT.supabase.co
++SUPABASE_SERVICE_ROLE_KEY=
++# Generate these with npm run private:setup (Node 22+).
++ADMIN_PASSWORD_HASH=
++ADMIN_SESSION_SECRET=
+diff --git a/.gitignore b/.gitignore
+index 5ef6a520780202a1d6addd833d800ccb1ecac0bb..23e6c816c2d0ca39fd068a5d8666093bc3c552d0 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -32,6 +32,13 @@ yarn-error.log*
+ 
+ # env files (can opt-in for committing if needed)
+ .env*
++!.env.example
++
++# Private exports and media never belong in this public repository.
++/private-data/
++/private-backups/
++/test-results/
++/playwright-report/
+ 
+ # vercel
+ .vercel
+diff --git a/CONFIGURAR_AREA_PRIVADA.md b/CONFIGURAR_AREA_PRIVADA.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..e36c20755d8ba5629807034d794254e3ce4492e1
+--- /dev/null
++++ b/CONFIGURAR_AREA_PRIVADA.md
+@@ -0,0 +1,108 @@
++# Área privada do site
++
++O site existente continua igual até você liberar alguma novidade. O painel fica em `/preparar`, sem link na página inicial. Saber esse endereço não dá acesso: a senha é verificada no servidor, e cada API administrativa verifica a sessão novamente.
++
++## 1. Aplicar a atualização
++
++Este pacote foi preparado a partir do commit `e862917144306ae053c97c3b1a1e62c5458de3a2` da branch `main`. A conexão do GitHub recusou a criação da branch com HTTP 403; a atualização ainda não foi enviada ao repositório nem publicada.
++
++Se recebeu o ZIP, extraia e copie o **conteúdo da pasta `atualizacao`** para a raiz do seu projeto `site-namorada`, juntando as pastas e substituindo os arquivos correspondentes. As fotos, as músicas e o conteúdo atual não são removidos. O ZIP contém somente arquivos novos e alterados, sem credenciais nem mensagens pessoais novas.
++
++Se prefere Git, o mesmo ZIP contém `area-privada.patch`. Na raiz do seu projeto, com a árvore de trabalho limpa e as alterações remotas atualizadas, execute:
++
++```bash
++git apply --check caminho/para/area-privada.patch
++git apply caminho/para/area-privada.patch
++```
++
++Use **uma** dessas formas de aplicação. Depois:
++
++```bash
++npm ci
++npm run lint
++npm run test:privacy
++npm run build
++```
++
++Use Node.js 22.18 ou superior para os testes com TypeScript nativo; Node 24 também funciona. A atualização não acrescenta dependências de produção.
++
++## 2. Criar o armazenamento privado
++
++1. Crie um **projeto Supabase separado** para este site. Não use o banco do Meu Aliado.
++2. No SQL Editor desse novo projeto, execute o arquivo `supabase/surprises.sql` completo.
++3. O script cria os seis espaços vazios, separa rascunho e versão liberada, ativa RLS, restringe as tabelas e funções ao servidor e cria o bucket privado `private-surprises`.
++4. Em Storage, confira que esse bucket está como **Private**. Não crie políticas públicas para ele.
++5. Nas configurações de API, copie a URL do projeto e a chave de servidor `service_role` (ou a chave secreta equivalente do projeto). Essas credenciais serão usadas somente pelo servidor Next.js.
++
++O script pode ser executado novamente sem apagar os rascunhos. Ele contém apenas a estrutura e os nomes genéricos dos seis recursos. Você escreve as mensagens pelo painel depois da configuração.
++
++## 3. Definir sua senha
++
++No terminal, dentro do projeto:
++
++```bash
++npm run private:setup
++```
++
++Digite e confirme uma senha de pelo menos 14 caracteres. A digitação não aparece na tela e a senha não é gravada em arquivo nem passada na linha de comando. O script mostra `ADMIN_PASSWORD_HASH` e `ADMIN_SESSION_SECRET`: copie esses dois valores para o ambiente do servidor. Guarde a sua senha; o hash não permite recuperá-la.
++
++## 4. Configurar o ambiente
++
++Para testar no computador, copie `.env.example` para `.env.local` e preencha:
++
++| Variável | Valor |
++| --- | --- |
++| `APP_ORIGIN` | `http://localhost:3000` no teste local; a URL HTTPS exata do seu site na Vercel em produção, sem caminho |
++| `SUPABASE_URL` | URL HTTPS do projeto Supabase separado |
++| `SUPABASE_SERVICE_ROLE_KEY` | Chave de servidor desse projeto |
++| `ADMIN_PASSWORD_HASH` | Valor gerado pelo comando de configuração |
++| `ADMIN_SESSION_SECRET` | Valor gerado pelo comando de configuração |
++
++Não use o prefixo `NEXT_PUBLIC_` em nenhuma dessas variáveis. Não coloque chaves, hashes ou a senha em código, screenshots, README, commits, issues ou comentários de PR. `.env.local` já está ignorado pelo Git.
++
++Execute `npm run dev`, abra a mesma origem que configurou (por exemplo, `http://localhost:3000/preparar`) e entre com sua senha. Usar `127.0.0.1` no navegador enquanto `APP_ORIGIN` está como `localhost` será rejeitado.
++
++Na Vercel, adicione as cinco variáveis em **Settings → Environment Variables**, no ambiente Production, e faça um novo deploy. A origem precisa ser o domínio em que você realmente abre o painel. Não compartilhe credenciais de produção com deploys de Preview: use outro projeto e outros segredos, ou deixe o painel de Preview sem configuração. Sem configuração, ele permanece fechado e o site atual continua funcionando.
++
++## 5. Preparar e liberar
++
++Entre em `https://SEU-DOMINIO/preparar`. Cada novidade tem seus próprios botões:
++
++- **Salvar rascunho:** grava no banco privado. Uma versão já liberada continua exatamente como estava.
++- **Ver rascunho:** mostra uma prévia dentro do painel, incluindo uma cápsula que ainda não chegou à data.
++- **Liberar esta novidade / Atualizar versão liberada:** pede confirmação e publica uma cópia do conteúdo atual do editor. Não libera as outras cinco.
++- **Ver versão liberada:** permite comparar com o rascunho.
++- **Recolher do site:** remove a versão liberada e mantém o rascunho. Os links dos arquivos deixam de funcionar para novos pedidos públicos, salvo se o mesmo arquivo continuar usado em outra novidade liberada.
++
++Você pode adicionar, remover e reordenar itens. Salve antes de trocar de novidade. Se duas abas tentarem sobrescrever o mesmo conteúdo, a segunda gravação é recusada: copie as alterações locais que quiser manter e recarregue.
++
++| Novidade | Como preencher |
++| --- | --- |
++| Linha do tempo | Um item para cada marco, com data, título, relato e foto. No site, os marcos aparecem em ordem de data. |
++| Estrelas com segredos | Um recado por estrela. Defina a posição horizontal e vertical, em porcentagem da tela, e confira na prévia. Pode incluir foto e áudio. No site, as estrelas liberadas são clicáveis sobre o fundo existente. |
++| Cápsula do tempo | Defina a data e a hora de abertura no horário de Goiás. Escreva a carta nos itens; fotos e áudios são opcionais. Se liberar antes da data, aparece apenas o título e a data da cápsula fechada. A abertura, o texto de introdução, os itens e os identificadores de arquivos ficam retidos no servidor até a hora certa. |
++| Mensagens com a sua voz | Envie um áudio para cada item. Escolha uma cartinha existente ou a seção própria de áudios. A mensagem aparece somente quando esta novidade estiver liberada. |
++| Nossos próximos capítulos | Cadastre sonhos e lugares. Depois, marque como realizado e acrescente a foto; salve e atualize a versão liberada quando desejar mostrar. |
++| Um motivo para te amar | Um item por motivo, com texto escrito por você. O botão revela um motivo diferente a cada toque, na ordem definida, e reinicia ao terminar a lista. |
++
++Fotos: JPG, PNG ou WebP. Áudios: MP3, M4A, OGG, WAV ou WebM. Limite de **3 MB por arquivo** para funcionar também nas funções da Vercel. Comprima fotos e exporte áudios longos em MP3/M4A antes de enviar. SVG e URLs externas não são aceitos. O nome original do arquivo não é usado no armazenamento.
++
++O envio guarda o arquivo em privado; clique em **Salvar rascunho** para guardar sua associação ao item. Retirar um arquivo do editor não apaga seus bytes do bucket, pois ele pode estar na versão liberada. Para uma exclusão definitiva, primeiro retire de todas as versões, depois exclua pelo Storage do Supabase.
++
++## O que a proteção cobre
++
++- Rascunhos não entram em `public/`, no Git, no JavaScript enviado aos visitantes, no HTML público ou em `localStorage`.
++- A API pública seleciona apenas versões liberadas. A API de arquivos verifica, em cada pedido, se o arquivo é referenciado por uma versão liberada e aberta; uma URL conhecida não contorna o bloqueio. O administrador autenticado pode visualizar os próprios arquivos.
++- A cápsula usa a hora do servidor. Mudar o relógio do celular não abre a carta. O título e a data escolhidos ficam visíveis depois que você libera a cápsula.
++- Respostas de dados e arquivos têm `no-store`. Não são criados links públicos ou assinados que continuem válidos após recolher. As imagens privadas passam fora do otimizador público do Next.js.
++- A sessão dura quatro horas, em cookie HttpOnly, SameSite Strict e Secure em produção. Requisições que alteram dados precisam ter a origem exata configurada.
++- O limite de login fica no banco: oito tentativas por origem de cliente em quinze minutos, com um teto global de cinquenta. Em hospedagens fora da Vercel, todas as tentativas compartilham o limite de oito. Aguarde a janela terminar se atingir o limite.
++- O site aberto verifica novas liberações a cada minuto e ao voltar à janela. Atualize a página para conferir imediatamente.
++
++Depois de liberar algo, quem recebeu pode copiar, baixar ou capturar o conteúdo; recolher não remove essas cópias. As seções liberadas ficam disponíveis aos visitantes do site. A senha protege a preparação; ela não torna as publicações exclusivas para uma pessoa.
++
++As fotos e cartas que **já estavam** no repositório continuam públicas, inclusive no histórico do Git. Esta atualização não as reclassifica como privadas. Nunca prepare novas mensagens em `src/lib/story.ts`, `public/`, testes, branches ou PRs: uma branch de um repositório público também é pública.
++
++Para trocar a senha, gere novos valores com `npm run private:setup`, atualize as duas variáveis e faça novo deploy. Isso invalida as sessões anteriores. Mantenha backups privados do banco e do bucket; não os salve neste repositório.
++
++Referências oficiais: [segurança de dados do Next.js](https://nextjs.org/docs/app/guides/data-security), [variáveis de ambiente](https://nextjs.org/docs/app/guides/environment-variables), [buckets privados](https://supabase.com/docs/guides/storage/buckets/fundamentals) e [controle de acesso do Storage](https://supabase.com/docs/guides/storage/security/access-control).
+diff --git a/VALIDACAO_AREA_PRIVADA.md b/VALIDACAO_AREA_PRIVADA.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..634cfeb4134bb18eb961c78496c742fd4c309704
+--- /dev/null
++++ b/VALIDACAO_AREA_PRIVADA.md
+@@ -0,0 +1,20 @@
++# Validação da atualização
++
++Base: `main`, commit `e862917144306ae053c97c3b1a1e62c5458de3a2`.
++
++## Verificações concluídas
++
++- ESLint, TypeScript e build de produção com Next.js 16.3.0.
++- Doze testes automatizados de senha, assinatura e expiração de sessão, rotação de credenciais, validação de conteúdo e arquivos, rascunhos não publicados e abertura da cápsula pelo horário do servidor.
++- Execução do SQL em PostgreSQL local via PGlite, incluindo segunda execução sem apagar conteúdo; seis espaços vazios; acesso negado às tabelas e funções para os papéis `anon` e `authenticated`; bucket privado; política restritiva protegendo os arquivos mesmo na presença de uma política permissiva genérica de teste.
++- Testes HTTP da aplicação compilada, com as APIs de dados e Storage simuladas localmente e as funções SQL reais: autenticação, origem inválida, rascunho isolado, publicação, edição sem alterar versão pública, conflito de versões, recolhimento individual, acesso direto a arquivos, arquivos de cápsula futura, requisições Range, cabeçalhos de cache e limite persistente de login.
++- Testes no Chromium contra a aplicação compilada: entrada com senha, envio de arquivo, gravação, prévia, liberação, edição privada e recolhimento. Verificados os seis recursos: estrela clicável e modal, cápsula fechada, foto publicada carregada, reprodução de áudio dentro da cartinha, capítulo realizado e botão de motivos.
++- Layout público e painel sem rolagem horizontal em larguras de 320, 390, 768 e 1440 pixels; sem erros de execução durante esse fluxo.
++- Conteúdo usado como marcador de rascunho nos testes ausente dos arquivos públicos de JavaScript e do HTML estático da página inicial.
++- Fundo, cores e conteúdo existentes preservados. `src/app/globals.css`, as fotos, as músicas e `src/lib/story.ts` não foram alterados. A integração acrescenta as novidades somente quando há uma versão liberada.
++
++## O que ainda depende do ambiente real
++
++Os testes usam dados fictícios descartáveis. Não foi criado nem acessado um projeto Supabase de produção. É necessário executar o SQL e configurar as cinco variáveis conforme `CONFIGURAR_AREA_PRIVADA.md`, fazer o deploy e conferir o login e um rascunho no domínio real.
++
++A conexão do GitHub retornou HTTP 403 ao criar a branch. Não houve envio, merge ou publicação automática. O ZIP contém os arquivos prontos e um patch aplicável à base indicada; nenhuma senha, chave real, nova mensagem pessoal ou arquivo dos testes faz parte do pacote.
+diff --git a/next.config.ts b/next.config.ts
+index e9ffa3083ad279ecf95fd8eae59cb253e9a539c4..e4068b520b40ad0d66881b8174db3c4f4a4c43bf 100644
+--- a/next.config.ts
++++ b/next.config.ts
+@@ -1,7 +1,21 @@
+ import type { NextConfig } from "next";
+ 
+ const nextConfig: NextConfig = {
+-  /* config options here */
++  async headers() {
++    const protectedHeaders = [
++      { key: "Cache-Control", value: "private, no-store, max-age=0" },
++      { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
++      { key: "X-Frame-Options", value: "DENY" },
++      { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
++      { key: "Referrer-Policy", value: "no-referrer" },
++      { key: "X-Content-Type-Options", value: "nosniff" },
++    ];
++    return [
++      { source: "/preparar", headers: protectedHeaders },
++      { source: "/api/private/:path*", headers: protectedHeaders },
++      { source: "/api/surprises/:path*", headers: protectedHeaders },
++    ];
++  },
+ };
+ 
+ export default nextConfig;
+diff --git a/package.json b/package.json
+index ee99c9c91a600a690fb4220a06fe84a497d0ce1c..89f9d8600e13287fbc995eb89c8acc9370e52c9a 100644
+--- a/package.json
++++ b/package.json
+@@ -6,7 +6,9 @@
+     "dev": "next dev",
+     "build": "next build",
+     "start": "next start",
+-    "lint": "eslint"
++    "lint": "eslint",
++    "private:setup": "node scripts/private-setup.mjs",
++    "test:privacy": "node --experimental-strip-types --test tests/privacy.test.mjs"
+   },
+   "dependencies": {
+     "next": "16.3.0",
+diff --git a/scripts/private-setup.mjs b/scripts/private-setup.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..8ef7340b6eb05d0492c707fbe235c52665a6162b
+--- /dev/null
++++ b/scripts/private-setup.mjs
+@@ -0,0 +1,28 @@
++import { randomBytes, scryptSync } from "node:crypto";
++import readline from "node:readline";
++
++// Never accept a password as a CLI argument, to keep it out of shell history.
++if (!process.stdin.isTTY) { console.error("Execute em um terminal interativo: npm run private:setup"); process.exit(1); }
++async function hidden(prompt) {
++  process.stdout.write(prompt);
++  process.stdin.setRawMode(true); process.stdin.resume(); process.stdin.setEncoding("utf8");
++  readline.emitKeypressEvents(process.stdin);
++  return new Promise((resolve) => {
++    let value = "";
++    const listener = (text, key) => {
++      if (key?.ctrl && key.name === "c") { process.stdin.setRawMode(false); process.stdout.write("\n"); process.exit(1); }
++      if (key?.name === "return") { process.stdin.off("keypress", listener); process.stdin.setRawMode(false); process.stdin.pause(); process.stdout.write("\n"); resolve(value); }
++      else if (key?.name === "backspace") value = value.slice(0, -1);
++      else if (text && !key?.ctrl && !key?.meta && !/[\x00-\x1f\x7f]/.test(text)) value += text;
++    };
++    process.stdin.on("keypress", listener);
++  });
++}
++const password = await hidden("Crie sua senha (mínimo de 14 caracteres, não será exibida): ");
++if (password.length < 14 || password.length > 256) { console.error("Use de 14 a 256 caracteres."); process.exit(1); }
++const confirmation = await hidden("Repita a senha: ");
++if (password !== confirmation) { console.error("As senhas não conferem."); process.exit(1); }
++const salt = randomBytes(16).toString("hex");
++console.log("\nCopie estas variáveis somente para o ambiente do servidor. Não faça commit:");
++console.log(`ADMIN_PASSWORD_HASH=scrypt:${salt}:${scryptSync(password, salt, 64).toString("hex")}`);
++console.log(`ADMIN_SESSION_SECRET=${randomBytes(48).toString("base64url")}`);
+diff --git a/src/app/api/private/media/route.ts b/src/app/api/private/media/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..9e9f20ac253fdfeee7dcb3734d0991b15838ba62
+--- /dev/null
++++ b/src/app/api/private/media/route.ts
+@@ -0,0 +1,17 @@
++import { randomUUID } from "node:crypto";
++import { failure, json, readBytes, requireAdmin, sameOrigin } from "@/lib/server/private-http";
++import { BUCKET, HttpError, supabase } from "@/lib/server/surprise-store";
++import { MAX_MEDIA_BYTES, mediaExtension } from "@/lib/server/media";
++export const runtime = "nodejs";
++export async function POST(request: Request) {
++  try {
++    sameOrigin(request); await requireAdmin();
++    const bytes = await readBytes(request, MAX_MEDIA_BYTES);
++    const type = request.headers.get("content-type")?.split(";")[0] ?? "";
++    const extension = mediaExtension(type, bytes);
++    if (!extension) throw new HttpError(415, "Use JPG, PNG, WebP, MP3, M4A, OGG, WAV ou WebM válidos (até 3 MB).");
++    const asset = `${randomUUID()}.${extension}`;
++    await supabase(`/storage/v1/object/${BUCKET}/${asset}`, { method: "POST", headers: { "Content-Type": type, "Cache-Control": "private, no-store", "x-upsert": "false" }, body: new Uint8Array(bytes) });
++    return json({ asset }, 201);
++  } catch (error) { return failure(error); }
++}
+diff --git a/src/app/api/private/sections/[id]/route.ts b/src/app/api/private/sections/[id]/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..b831c02c81eca57bc9b7307f8592d3f285b9d1e7
+--- /dev/null
++++ b/src/app/api/private/sections/[id]/route.ts
+@@ -0,0 +1,21 @@
++import { isSectionId, validateContent, validatePublication } from "@/lib/surprises";
++import { failure, json, readJson, requireAdmin, sameOrigin } from "@/lib/server/private-http";
++import { HttpError, rpc } from "@/lib/server/surprise-store";
++export const dynamic = "force-dynamic";
++export async function POST(request: Request, context: RouteContext<"/api/private/sections/[id]">) {
++  try {
++    sameOrigin(request); await requireAdmin();
++    const { id } = await context.params;
++    if (!isSectionId(id)) throw new HttpError(404, "Novidade não encontrada.");
++    const body = await readJson(request);
++    if (!Number.isInteger(body?.version) || body.version < 0 || !["save", "publish", "hide"].includes(body?.action)) throw new HttpError(400, "Ação inválida.");
++    let content = null;
++    if (body.action !== "hide") {
++      try { content = validateContent(body.content); if (body.action === "publish") validatePublication(id, content); }
++      catch (error) { throw new HttpError(400, error instanceof Error ? error.message : "Conteúdo inválido."); }
++    }
++    const section = await rpc("surprise_update", { section_id: id, expected_version: body.version, operation: body.action, content });
++    if (!section) throw new HttpError(409, "O conteúdo mudou em outra aba. Copie suas alterações e recarregue.");
++    return json({ section });
++  } catch (error) { return failure(error); }
++}
+diff --git a/src/app/api/private/sections/route.ts b/src/app/api/private/sections/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..ce21b810b8a890dcff1dcd6a2c11b87b698b1e80
+--- /dev/null
++++ b/src/app/api/private/sections/route.ts
+@@ -0,0 +1,7 @@
++import { failure, json, requireAdmin } from "@/lib/server/private-http";
++import { adminSections } from "@/lib/server/surprise-store";
++export const dynamic = "force-dynamic";
++export async function GET() {
++  try { await requireAdmin(); return json({ sections: await adminSections() }); }
++  catch (error) { return failure(error); }
++}
+diff --git a/src/app/api/private/session/route.ts b/src/app/api/private/session/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..c2f002fa6e2d9ac00bd81710640cc269b6f7d01d
+--- /dev/null
++++ b/src/app/api/private/session/route.ts
+@@ -0,0 +1,32 @@
++import { createHmac } from "node:crypto";
++import { authConfig, cookieName, failure, isAdmin, json, readJson, sameOrigin } from "@/lib/server/private-http";
++import { checkPassword, SESSION_SECONDS, signSession } from "@/lib/server/security";
++import { HttpError, rpc } from "@/lib/server/surprise-store";
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++
++export async function GET() { return json({ authenticated: await isAdmin() }); }
++export async function POST(request: Request) {
++  try {
++    sameOrigin(request);
++    const { secret, passwordHash } = authConfig();
++    const body = await readJson(request, 2048);
++    // Atomic shared limit survives serverless cold starts. Global cap also prevents spoofed IP bypass.
++    // Vercel overwrites x-vercel-forwarded-for. Other hosts still have the global cap.
++    const ip = process.env.VERCEL ? request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ?? "unknown" : "self-hosted";
++    const key = createHmac("sha256", secret).update(ip).digest("hex");
++    if (!(await rpc("surprise_login_attempt", { client_key: key }))) throw new HttpError(429, "Muitas tentativas. Aguarde 15 minutos e tente novamente.");
++    if (!checkPassword(body?.password, passwordHash)) throw new HttpError(401, "Senha incorreta.");
++    const response = json({ authenticated: true });
++    response.cookies.set(cookieName(), signSession(secret, passwordHash), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", maxAge: SESSION_SECONDS, path: "/" });
++    return response;
++  } catch (error) { return failure(error); }
++}
++export async function DELETE(request: Request) {
++  try {
++    sameOrigin(request);
++    const response = json({ authenticated: false });
++    response.cookies.set(cookieName(), "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", maxAge: 0, path: "/" });
++    return response;
++  } catch (error) { return failure(error); }
++}
+diff --git a/src/app/api/surprises/media/[asset]/route.ts b/src/app/api/surprises/media/[asset]/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..65324b32ae7619295512795046708251c0ba8718
+--- /dev/null
++++ b/src/app/api/surprises/media/[asset]/route.ts
+@@ -0,0 +1,22 @@
++import { assetPattern } from "@/lib/surprises";
++import { failure, isAdmin, PRIVATE_HEADERS } from "@/lib/server/private-http";
++import { BUCKET, HttpError, publicAssetAllowed, supabase } from "@/lib/server/surprise-store";
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++export async function GET(request: Request, context: RouteContext<"/api/surprises/media/[asset]">) {
++  try {
++    const { asset } = await context.params;
++    if (!assetPattern.test(asset)) throw new HttpError(404, "Arquivo não encontrado.");
++    // Check every request, including Range requests. Never redirect to public/signed URLs.
++    if (!(await isAdmin()) && !(await publicAssetAllowed(asset))) throw new HttpError(404, "Arquivo não encontrado.");
++    const range = request.headers.get("range");
++    const upstream = await supabase(`/storage/v1/object/authenticated/${BUCKET}/${asset}`, { headers: range ? { Range: range } : {} });
++    const headers = new Headers(PRIVATE_HEADERS);
++    for (const name of ["content-type", "content-length", "content-range", "accept-ranges"]) {
++      const value = upstream.headers.get(name); if (value) headers.set(name, value);
++    }
++    headers.set("Content-Disposition", "inline");
++    headers.set("Content-Security-Policy", "default-src 'none'; sandbox");
++    return new Response(upstream.body, { status: upstream.status, headers });
++  } catch (error) { return failure(error); }
++}
+diff --git a/src/app/api/surprises/route.ts b/src/app/api/surprises/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..dd98d84a0d10437e59f2e88c85f39b388da5a705
+--- /dev/null
++++ b/src/app/api/surprises/route.ts
+@@ -0,0 +1,7 @@
++import { failure, json } from "@/lib/server/private-http";
++import { publicSections } from "@/lib/server/surprise-store";
++export const dynamic = "force-dynamic";
++export async function GET() {
++  try { return json({ sections: await publicSections() }); }
++  catch (error) { return failure(error); }
++}
+diff --git a/src/app/layout.tsx b/src/app/layout.tsx
+index 4e392aa77b0213ae0e8fe0ced8ed23668a6ffc9c..22ca750696b032defc187e6a2ea547a2e45ce8aa 100644
+--- a/src/app/layout.tsx
++++ b/src/app/layout.tsx
+@@ -1,6 +1,7 @@
+ import type { Metadata } from "next";
+ import { Geist, Geist_Mono } from "next/font/google";
+ import "./globals.css";
++import "./surprises.css";
+ 
+ const geistSans = Geist({
+   variable: "--font-geist-sans",
+diff --git a/src/app/page.tsx b/src/app/page.tsx
+index a1b2a4adda796d6d2aff92e13244f2fe42c813d7..6343af34e45b992cc8139987981a6db6d0d8d70a 100644
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -8,6 +8,7 @@ import { TogetherCounter } from "@/components/together-counter";
+ import { MemoryAlbum } from "@/components/memory-album";
+ import { OpenWhen } from "@/components/open-when";
+ import { OurUniverse } from "@/components/our-universe";
++import { ReleasedSurprises, ReleasedSurprisesProvider } from "@/components/released-surprises";
+ 
+ export default function NossoSite() {
+   const audio = useRef<HTMLAudioElement>(null);
+@@ -27,7 +28,7 @@ export default function NossoSite() {
+   }
+ 
+   return (
+-    <div className="our-story" id="inicio">
++    <ReleasedSurprisesProvider><div className="our-story" id="inicio">
+       <Stars />
+       <audio ref={audio} src="/musica.mp3" loop preload="none" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onError={() => { setPlaying(false); setMusicError("A nossa música não carregou. Tente novamente daqui a pouquinho."); }} />
+       <a className="skip-link" href="#conteudo">Ir para a nossa história</a>
+@@ -99,12 +100,13 @@ export default function NossoSite() {
+           </div><p className="letter-signoff">Com todo o meu amor,<span>Vitor</span></p></article><span className="letter-corner-star" aria-hidden="true">✧</span></div>
+         </section>
+ 
++        <ReleasedSurprises />
+         <section className="section wrap universe-section" id="universo" aria-label="O nosso encontro de universos"><OurUniverse /></section>
+       </main>
+ 
+       <footer className="site-footer wrap"><a className="wordmark" href="#inicio" aria-label="Voltar ao início">V<span>&</span>Y</a><p>Um pequeno espaço no universo.<br /><span>Um amor que não cabe nele.</span></p><span className="footer-love">Feito com muito <Icon name="heart" width="14" height="14" /></span></footer>
+       {playing && <button className="floating-player" type="button" onClick={toggleMusic} aria-label="Pausar nossa música"><span className="equalizer" aria-hidden="true"><i /><i /><i /><i /></span><span>A nossa música<span>Pra Mudar A Minha Vida</span></span><Icon name="pause" width="16" height="16" /></button>}
+       {musicError && <div className="music-error" role="status">{musicError}<button type="button" onClick={() => setMusicError("")} aria-label="Fechar aviso"><Icon name="close" width="16" height="16" /></button></div>}
+-    </div>
++    </div></ReleasedSurprisesProvider>
+   );
+ }
+diff --git a/src/app/preparar/page.tsx b/src/app/preparar/page.tsx
+new file mode 100644
+index 0000000000000000000000000000000000000000..e648ae84bceab6148e6352ee0176de1bd9287c10
+--- /dev/null
++++ b/src/app/preparar/page.tsx
+@@ -0,0 +1,6 @@
++import { isAdmin, privateConfigured } from "@/lib/server/private-http";
++import { PrivateWorkshop } from "@/components/private-workshop";
++export const dynamic = "force-dynamic";
++export default async function Preparar() {
++  return <PrivateWorkshop authenticated={await isAdmin()} configured={privateConfigured()} />;
++}
+diff --git a/src/app/surprises.css b/src/app/surprises.css
+new file mode 100644
+index 0000000000000000000000000000000000000000..0209a8ce60e9f709b77bdc8259a8de3906b1df39
+--- /dev/null
++++ b/src/app/surprises.css
+@@ -0,0 +1,119 @@
++/* Scoped additions: the original home and its star field keep their styles. */
++.workshop-page { min-height: 100vh; }
++.workshop-header { display: flex; align-items: center; gap: 24px; min-height: 98px; border-bottom: 1px solid var(--line); }
++.workshop-header .wordmark { margin-right: auto; }
++.workshop-link, .workshop-text-button { color: var(--blue); font-size: 12px; }
++.workshop-login { max-width: 620px; padding-block: 90px 150px; }
++.workshop-login h1, .workshop-main h1 { font-size: clamp(38px, 5vw, 62px); line-height: 1.1; margin-block: 18px 26px; }
++.workshop-login > p:not(.eyebrow), .workshop-editor-heading p { color: var(--muted); font-size: 13px; line-height: 1.9; }
++.workshop-login form { display: grid; gap: 13px; margin-top: 32px; }
++.workshop-login label, .workshop-fields label { display: grid; gap: 10px; color: #c2cee0; font-size: 12px; line-height: 1.6; }
++.workshop-page input:not([type="checkbox"]), .workshop-page textarea, .workshop-page select { width: 100%; min-width: 0; padding: 13px 14px; border: 1px solid #9ec5ff33; border-radius: 5px; background: #0c111b; color: #f1f0eb; font: inherit; font-size: 14px; line-height: 1.6; }
++.workshop-page textarea { resize: vertical; }
++.workshop-page input[type="file"] { font-size: 12px; }
++.workshop-page input[type="file"]::file-selector-button { color: #c6d9f5; background: #18243a; border: 1px solid #9ec5ff33; border-radius: 3px; padding: 7px 11px; margin-right: 12px; cursor: pointer; }
++.workshop-page input[type="checkbox"] { accent-color: #9ec5ff; width: 18px; height: 18px; }
++.workshop-page fieldset { border: 0; padding: 0; min-width: 0; }
++.workshop-page :disabled { cursor: not-allowed; }
++.workshop-page small { color: #9baabd; line-height: 1.7; }
++.workshop-alert, .workshop-notice { padding: 16px 20px; margin-block: 24px; border: 1px solid #e9a6a64a; background: #e9a6a609; color: #f0bdbd; border-radius: 5px; font-size: 13px; line-height: 1.8; }
++.workshop-alert button { border: 0; background: transparent; color: inherit; text-decoration: underline; margin-left: 20px; }
++.workshop-notice { color: #bdd5f6; border-color: #9ec5ff45; background: #9ec5ff09; }
++.workshop-main { padding-block: 58px 100px; }
++.workshop-main > .section-heading { margin-bottom: 40px; }
++.workshop-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 48px; }
++.workshop-tabs button { text-align: left; border: 1px solid var(--line); border-radius: 6px; padding: 20px; background: #0a0e15; color: #a4adbd; display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; }
++.workshop-tabs button[aria-current="page"] { border-color: #9ec5ff88; background: #111c2c; color: #e0eaff; }
++.workshop-tabs button > span { grid-row: span 2; font-family: var(--serif); font-size: 24px; color: var(--blue); }
++.workshop-tabs strong { font-size: 12px; font-weight: 500; }
++.workshop-tabs small { font-size: 10px; }
++.workshop-editor-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 22px; padding-bottom: 30px; }
++.workshop-editor-heading h2 { font-size: 32px; margin-bottom: 14px; }
++.workshop-editor-heading p strong { color: #c4dbfa; font-weight: 400; }
++.workshop-badge { padding: 7px 11px; border: 1px solid var(--line); color: #a2acbd; font-size: 10px; border-radius: 30px; white-space: nowrap; }
++.workshop-badge.published { color: #acd2ff; border-color: #9ec5ff55; background: #9ec5ff0a; }
++.workshop-fields { display: grid; gap: 25px; }
++.workshop-item-list { display: grid; gap: 20px; }
++.workshop-item { background: #0c111a; border: 1px solid var(--line); border-radius: 6px; padding: 26px; display: grid; gap: 23px; }
++.workshop-item-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
++.workshop-item-heading h3 { color: var(--blue); font-family: var(--serif); font-weight: 400; font-size: 24px; }
++.workshop-item-heading > div { display: flex; gap: 10px; }
++.workshop-item-heading button, .workshop-attachment button { border: 1px solid var(--line); background: transparent; color: #a6b9d1; border-radius: 4px; min-height: 35px; padding: 7px 11px; font-size: 11px; }
++.workshop-fields .workshop-checkbox { display: flex; align-items: center; }
++.workshop-position { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
++.workshop-uploads { display: grid; gap: 20px; border-top: 1px solid var(--line); padding-top: 22px; }
++.workshop-attachment { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
++.workshop-attachment img { max-width: min(240px, 100%); max-height: 200px; object-fit: contain; border-radius: 3px; }
++.workshop-attachment audio { max-width: 100%; }
++.workshop-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; border-top: 1px solid var(--line); padding-top: 25px; margin-top: 35px; }
++.workshop-text-button { background: transparent; border: 0; padding: 12px; min-height: 44px; }
++.workshop-hint { font-size: 12px; line-height: 1.8; color: #94a4ba; margin-block: 20px; }
++.workshop-confirm-actions { display: flex; flex-wrap: wrap; gap: 12px; }
++.workshop-preview { width: min(850px, calc(100% - 32px)); max-width: 850px; }
++.workshop-preview h2 { font-size: 33px; }
++.workshop-preview .modal-body, .workshop-confirm .modal-body { padding: 40px 32px 32px; }
++.workshop-confirm h2 { font-size: 34px; padding-right: 22px; }
++.workshop-preview .surprise-section { padding-block: 34px; }
++.workshop-preview .surprise-heading h2 { font-size: 36px; }
++.workshop-preview .surprise-cards { grid-template-columns: 1fr; }
++.workshop-preview .surprise-timeline { padding-left: 25px; }
++.released-surprises:empty { display: none; }
++.surprise-section { padding-block: 74px; border-top: 1px solid var(--line); }
++.surprise-heading { max-width: 700px; margin-bottom: 38px; }
++.surprise-heading .eyebrow { margin-bottom: 20px; }
++.surprise-heading h2 { color: #d5e5fd; font-size: clamp(34px, 4.5vw, 52px); overflow-wrap: anywhere; }
++.surprise-intro { font-size: 13px; line-height: 1.9; color: var(--muted); margin-top: 22px; white-space: pre-wrap; overflow-wrap: anywhere; }
++.surprise-timeline { position: relative; border-left: 1px solid #9ec5ff40; margin-left: 8px; padding-left: 42px; display: grid; gap: 38px; }
++.surprise-card { min-width: 0; padding: 28px; background: #0c111a; border: 1px solid var(--line); border-radius: 6px; }
++.surprise-timeline .surprise-card { position: relative; }
++.surprise-timeline .surprise-card::before { content: ""; position: absolute; left: -49px; top: 36px; border: 4px solid #07090f; background: #a9ccff; width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 14px #9ec5ff33; }
++.surprise-card time { display: block; color: #8ea9ce; font-size: 11px; margin-bottom: 14px; }
++.surprise-card h3, .secret-message h3, .reason-message h3 { font-family: var(--serif); font-size: 28px; font-weight: 400; color: #d3e2fa; line-height: 1.3; margin-bottom: 15px; overflow-wrap: anywhere; }
++.surprise-card > p, .secret-message > p:not(.eyebrow), .reason-message p, .letter-voice p { color: #afb9ca; font-size: 14px; line-height: 1.9; white-space: pre-wrap; overflow-wrap: anywhere; }
++.surprise-photo { width: 100%; max-height: 550px; object-fit: contain; display: block; margin-top: 23px; border-radius: 4px; background: #07090f; }
++.surprise-audio { margin-top: 22px; padding: 20px; border: 1px solid #9ec5ff26; background: #9ec5ff05; border-radius: 5px; }
++.surprise-audio > p { color: #adc9ee; display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 14px; }
++.surprise-audio audio { width: 100%; display: block; }
++.surprise-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
++.chapter-state { display: inline-block; color: #9cbce8; font-size: 10px; border: 1px solid #9ec5ff35; border-radius: 30px; padding: 7px 12px; margin-bottom: 20px; }
++.capsule-closed { padding: 40px 26px; text-align: center; border: 1px solid var(--line); background: #0b101a; border-radius: 6px; }
++.capsule-closed > svg { color: var(--blue); display: block; margin: 0 auto 22px; }
++.capsule-closed p { color: #a7b3c7; font-size: 13px; line-height: 1.9; margin-bottom: 14px; }
++.capsule-closed strong { font-weight: 400; color: #c8ddfb; }
++.capsule-closed button { margin-top: 12px; }
++.secret-constellation { min-height: 320px; position: relative; border: 1px solid var(--line); border-radius: 6px; background: radial-gradient(ellipse at center, #152b4444, transparent); }
++.secret-star-layer { position: fixed; inset: 0; pointer-events: none; z-index: 4; }
++.secret-star { position: absolute; width: 44px; height: 44px; padding: 11px; display: grid; place-items: center; border: 0; background: transparent; color: #acd0ff; transform: translate(-50%, -50%); pointer-events: auto; filter: drop-shadow(0 0 7px #8bbaff70); }
++.secret-star:hover, .secret-star:focus-visible { color: white; background: #9ec5ff10; border-radius: 50%; }
++.secret-star svg { width: 18px; height: 18px; }
++.secret-message > svg { color: var(--blue); margin-bottom: 20px; }
++.secret-message { padding: 42px 32px 32px; }
++.secret-message .eyebrow { margin-bottom: 20px; }
++.reason-reveal { border: 1px solid var(--line); border-radius: 6px; padding: 45px 30px; text-align: center; background: radial-gradient(ellipse at top, #1b2c4455, #0b1018); }
++.reason-reveal > svg { color: var(--blue); margin: 0 auto 25px; display: block; }
++.reason-message { max-width: 620px; margin: 0 auto 30px; min-height: 80px; }
++.letter-voice { border-top: 1px solid var(--line); padding-top: 20px; margin-top: 28px; }
++@media (max-width: 700px) {
++  .workshop-header { gap: 12px; min-height: 80px; }
++  .workshop-header .workshop-link { font-size: 10px; max-width: 130px; line-height: 1.6; }
++  .workshop-header .button { min-height: 38px; padding: 8px 12px; font-size: 11px; }
++  .workshop-login { padding-block: 60px 100px; }
++  .workshop-main { padding-top: 36px; }
++  .workshop-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 32px; }
++  .workshop-tabs button { padding: 14px 10px; gap: 6px 8px; }
++  .workshop-tabs strong { font-size: 11px; line-height: 1.6; }
++  .workshop-tabs button > span { font-size: 18px; }
++  .workshop-editor-heading { flex-direction: column; gap: 14px; }
++  .workshop-editor-heading h2 { font-size: 28px; }
++  .workshop-item { padding: 18px 14px; }
++  .workshop-preview .modal-body, .workshop-confirm .modal-body, .secret-message { padding: 48px 20px 24px; }
++  .workshop-item-heading { flex-wrap: wrap; }
++  .workshop-position { gap: 12px; }
++  .workshop-toolbar .button { flex: 1 1 100%; }
++  .surprise-cards { grid-template-columns: 1fr; }
++  .surprise-timeline { padding-left: 24px; }
++  .surprise-timeline .surprise-card::before { left: -31px; }
++  .surprise-card { padding: 22px 18px; }
++  .surprise-section { padding-block: 50px; }
++  .surprise-audio { padding: 14px 9px; }
++}
+diff --git a/src/components/open-when.tsx b/src/components/open-when.tsx
+index 6db82dcb3e6117a480b77e1556a689551890f0d1..1a180ab48ad9a0f5d4153ba64739eb516c8f3ac2 100644
+--- a/src/components/open-when.tsx
++++ b/src/components/open-when.tsx
+@@ -4,6 +4,7 @@ import { useState } from "react";
+ import { letters } from "@/lib/story";
+ import { Icon } from "./icon";
+ import { Modal } from "./modal";
++import { ReleasedLetterAudio } from "./released-surprises";
+ 
+ export function OpenWhen() {
+   const [active, setActive] = useState<string | null>(null);
+@@ -26,6 +27,7 @@ export function OpenWhen() {
+         <p className="eyebrow">UMA CARTINHA SÓ SUA</p>
+         <h3 id="letter-title">Para quando<br /><em>{letter.title}.</em></h3>
+         <div className="letter-paragraphs">{letter.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div>
++        <ReleasedLetterAudio key={letter.id} letterId={letter.id} />
+         <p className="letter-signoff">Com todo o meu amor,<span>Vitor</span></p>
+       </article>}
+     </Modal>
+diff --git a/src/components/private-workshop.tsx b/src/components/private-workshop.tsx
+new file mode 100644
+index 0000000000000000000000000000000000000000..fa8947585128d0d82612e1d18f990f422bd46fff
+--- /dev/null
++++ b/src/components/private-workshop.tsx
+@@ -0,0 +1,155 @@
++"use client";
++
++import { useEffect, useState, type FormEvent } from "react";
++import Link from "next/link";
++import { type AdminSurprise, type SectionId, type SurpriseContent, type SurpriseItem, emptyItem, letterOptions, mediaUrl, sectionIds, sectionLabels } from "@/lib/surprises";
++import { Stars } from "./stars";
++import { Modal } from "./modal";
++import { SurpriseView } from "./surprise-view";
++
++async function api(path: string, init?: RequestInit) {
++  const response = await fetch(path, { ...init, cache: "no-store", credentials: "same-origin" });
++  const body = await response.json();
++  if (!response.ok) throw new Error(body.error ?? "Não foi possível concluir.");
++  return body;
++}
++function localDateTime(iso: string) {
++  if (!iso) return "";
++  // All editorial dates are explicitly in Goiás, independent of the editor's device timezone.
++  const parts = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(iso));
++  return parts.replace(" ", "T");
++}
++export function PrivateWorkshop({ authenticated, configured }: { authenticated: boolean; configured: boolean }) {
++  const [signedIn, setSignedIn] = useState(authenticated);
++  const [password, setPassword] = useState("");
++  const [sections, setSections] = useState<AdminSurprise[]>([]);
++  const [active, setActive] = useState<SectionId>("timeline");
++  const [draft, setDraft] = useState<SurpriseContent | null>(null);
++  const [busy, setBusy] = useState(false), [uploading, setUploading] = useState(false);
++  const [loading, setLoading] = useState(authenticated), [error, setError] = useState(""), [notice, setNotice] = useState("");
++  const [preview, setPreview] = useState(false), [confirm, setConfirm] = useState<"publish" | "hide" | null>(null);
++  const [previewPublished, setPreviewPublished] = useState(false);
++  const current = sections.find((s) => s.id === active);
++  const dirty = Boolean(draft && current && JSON.stringify(draft) !== JSON.stringify(current.draft));
++  const pending = busy || uploading || loading;
++
++  async function load() {
++    setLoading(true); setError("");
++    try {
++      const body = await api("/api/private/sections");
++      setSections(body.sections);
++      setDraft(body.sections.find((s: AdminSurprise) => s.id === active)?.draft ?? null);
++    } catch (e) { setError(e instanceof Error ? e.message : "Não foi possível carregar."); }
++    finally { setLoading(false); }
++  }
++  useEffect(() => {
++    if (!signedIn) return;
++    let cancelled = false;
++    api("/api/private/sections").then((body) => {
++      if (cancelled) return;
++      setSections(body.sections);
++      setDraft(body.sections.find((s: AdminSurprise) => s.id === active)?.draft ?? null);
++    }).catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : "Não foi possível carregar."); })
++      .finally(() => { if (!cancelled) setLoading(false); });
++    return () => { cancelled = true; };
++  }, [signedIn, active]);
++  useEffect(() => {
++    if (!dirty && !uploading) return;
++    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
++    window.addEventListener("beforeunload", warn);
++    return () => window.removeEventListener("beforeunload", warn);
++  }, [dirty, uploading]);
++
++  function changeSection(id: SectionId) {
++    if (id === active || pending || (dirty && !window.confirm("Você tem alterações sem salvar. Descartar e trocar de novidade?"))) return;
++    setActive(id); setDraft(null); setNotice(""); setError(""); setLoading(true);
++  }
++  function updateItem(index: number, changes: Partial<SurpriseItem>) {
++    setDraft((d) => d ? { ...d, items: d.items.map((item, i) => i === index ? { ...item, ...changes } : item) } : d);
++  }
++  async function signIn(event: FormEvent) {
++    event.preventDefault(); setBusy(true); setError("");
++    try { await api("/api/private/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password }) }); setPassword(""); setLoading(true); setSignedIn(true); }
++    catch (e) { setError(e instanceof Error ? e.message : "Não foi possível entrar."); }
++    finally { setBusy(false); }
++  }
++  async function signOut() {
++    if (dirty && !window.confirm("Há alterações sem salvar. Sair mesmo assim?")) return;
++    setBusy(true); setError("");
++    try { await api("/api/private/session", { method: "DELETE" }); setSignedIn(false); setSections([]); setDraft(null); setPreview(false); setConfirm(null); }
++    catch (e) { setError(e instanceof Error ? e.message : "Não foi possível sair."); }
++    finally { setBusy(false); }
++  }
++  async function mutate(action: "save" | "publish" | "hide") {
++    if (!current || !draft) return;
++    setBusy(true); setNotice(""); setError("");
++    try {
++      const { section } = await api(`/api/private/sections/${active}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, version: current.version, content: draft }) });
++      setSections((rows) => rows.map((s) => s.id === active ? section : s));
++      // Hiding never silently discards unsaved changes in the editor.
++      if (action !== "hide") setDraft(section.draft);
++      setNotice(action === "save" ? "Rascunho salvo. Só você pode ver estas alterações." : action === "publish" ? "Novidade liberada no site." : "Novidade recolhida. O rascunho continua guardado.");
++      setConfirm(null);
++    } catch (e) { setError(e instanceof Error ? e.message : "Não foi possível salvar."); setConfirm(null); }
++    finally { setBusy(false); }
++  }
++  async function upload(file: File | undefined, itemId: string, kind: "image" | "audio") {
++    if (!file) return;
++    setUploading(true); setNotice(""); setError("");
++    try {
++      if (file.size > 3 * 1024 * 1024) throw new Error("Envie arquivos de até 3 MB.");
++      const { asset } = await api("/api/private/media", { method: "POST", headers: { "Content-Type": file.type }, body: file });
++      setDraft((d) => d ? { ...d, items: d.items.map((item) => item.id === itemId ? { ...item, [kind]: asset } : item) } : d);
++      setNotice("Arquivo enviado em privado. Salve o rascunho para guardar o vínculo.");
++    } catch (e) { setError(e instanceof Error ? e.message : "Não foi possível enviar o arquivo."); }
++    finally { setUploading(false); }
++  }
++
++  return <div className="our-story workshop-page"><Stars />
++    <header className="workshop-header wrap"><Link className="wordmark" href="/" onClick={(e) => { if (dirty && !window.confirm("Descartar alterações locais e voltar ao site?")) e.preventDefault(); }}>V<span>&</span>Y</Link><Link href="/" className="workshop-link" onClick={(e) => { if (dirty && !window.confirm("Descartar alterações locais e voltar ao site?")) e.preventDefault(); }}>Voltar ao nosso universo ↗</Link>{signedIn && <button type="button" className="button button-outline" onClick={signOut} disabled={pending}>Sair</button>}</header>
++    {!signedIn ? <main className="workshop-login wrap">
++      <p className="eyebrow">UM CANTINHO RESERVADO</p><h1>O que vem a seguir<br /><em>começa aqui.</em></h1><p>Entre para preparar, guardar e escolher a hora de cada novidade.</p>
++      {!configured && <p className="workshop-alert" role="status">O painel ainda está fechado. Conclua a configuração descrita em CONFIGURAR_AREA_PRIVADA.md antes de entrar.</p>}
++      <form onSubmit={signIn} method="post" action="/api/private/session"><label htmlFor="admin-password">Sua senha</label><input id="admin-password" name="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required maxLength={256} disabled={!configured || busy} /><button type="submit" className="button button-primary" disabled={!configured || busy}>{busy ? "Entrando…" : "Entrar no espaço privado"}</button></form>
++      {error && <p className="workshop-alert" role="alert">{error}</p>}
++    </main> : <main className="wrap workshop-main">
++      <div className="section-heading"><div><p className="eyebrow">FEITO NO SEU TEMPO</p><h1>Nos bastidores<br /><em>do nosso universo.</em></h1></div><p>Prepare com calma.<br />Só aparece quando você liberar.</p></div>
++      <nav className="workshop-tabs" aria-label="Novidades">{sectionIds.map((id, i) => {
++        const section = sections.find((s) => s.id === id);
++        return <button key={id} type="button" aria-current={active === id ? "page" : undefined} onClick={() => changeSection(id)} disabled={pending}><span>0{i + 1}</span><strong>{sectionLabels[id]}</strong><small>{section?.published ? "Liberada" : "Privada"}</small></button>;
++      })}</nav>
++      {loading && <p role="status">Abrindo seu espaço…</p>}
++      {error && <div className="workshop-alert" role="alert">{error}<button type="button" disabled={pending} onClick={() => { if (!dirty || window.confirm("Descartar alterações locais e recarregar?")) void load(); }}>Recarregar</button></div>}
++      {notice && <p className="workshop-notice" role="status">{notice}</p>}
++      {draft && current && <>
++        <div className="workshop-editor-heading"><div><h2>{sectionLabels[active]}</h2><p>{current.published ? "A versão liberada fica intacta enquanto você edita o rascunho." : "Tudo aqui está privado."} {dirty && <strong>Há alterações sem salvar.</strong>}</p></div><span className={`workshop-badge ${current.published ? "published" : ""}`}>{current.published ? "No site" : "Rascunho privado"}</span></div>
++        <fieldset className="workshop-fields" disabled={pending}>
++          <label>Título da seção<input value={draft.title} maxLength={160} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></label>
++          <label>Texto de abertura<textarea value={draft.intro} maxLength={4000} rows={3} onChange={(e) => setDraft({ ...draft, intro: e.target.value })} /></label>
++          {active === "capsule" && <label>Data e horário de abertura · horário de Goiás<input type="datetime-local" value={localDateTime(draft.unlockAt)} onChange={(e) => setDraft({ ...draft, unlockAt: e.target.value ? new Date(`${e.target.value}:00-03:00`).toISOString() : "" })} /><small>Ao liberar, a cápsula aparece fechada até esta data. O texto e os arquivos só serão entregues depois.</small></label>}
++          <div className="workshop-item-list">{draft.items.map((item, index) => <article className="workshop-item" key={item.id}>
++            <div className="workshop-item-heading"><h3>{active === "reasons" ? "Motivo" : active === "stars" ? "Estrela" : "Item"} {String(index + 1).padStart(2, "0")}</h3><div><button type="button" aria-label={`Mover item ${index + 1} para cima`} disabled={pending || index === 0} onClick={() => { const items = [...draft.items]; [items[index - 1], items[index]] = [items[index], items[index - 1]]; setDraft({ ...draft, items }); }}>↑</button><button type="button" aria-label={`Mover item ${index + 1} para baixo`} disabled={pending || index === draft.items.length - 1} onClick={() => { const items = [...draft.items]; [items[index], items[index + 1]] = [items[index + 1], items[index]]; setDraft({ ...draft, items }); }}>↓</button><button type="button" onClick={() => { if (window.confirm("Remover este item do rascunho?")) setDraft({ ...draft, items: draft.items.filter((i) => i.id !== item.id) }); }}>Remover</button></div></div>
++            <label>Título<input value={item.title} maxLength={160} onChange={(e) => updateItem(index, { title: e.target.value })} /></label>
++            <label>{active === "reasons" ? "O motivo, do seu jeito" : "Sua mensagem"}<textarea value={item.text} rows={5} maxLength={12000} onChange={(e) => updateItem(index, { text: e.target.value })} /></label>
++            {(active === "timeline" || active === "chapters") && <label>{active === "timeline" ? "Data do marco" : "Data (opcional)"}<input type="date" value={item.date} onChange={(e) => updateItem(index, { date: e.target.value })} /></label>}
++            {active === "chapters" && <label className="workshop-checkbox"><input type="checkbox" checked={item.done} onChange={(e) => updateItem(index, { done: e.target.checked })} />Este sonho já aconteceu</label>}
++            {active === "stars" && <div className="workshop-position"><label>Posição horizontal (%)<input type="number" min={3} max={97} value={item.x} onChange={(e) => updateItem(index, { x: Number(e.target.value) })} /></label><label>Posição vertical (%)<input type="number" min={3} max={97} value={item.y} onChange={(e) => updateItem(index, { y: Number(e.target.value) })} /></label></div>}
++            {active === "voice" && <label>Onde ouvir esta mensagem<select value={item.letter} onChange={(e) => updateItem(index, { letter: e.target.value })}>{letterOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>}
++            {active !== "reasons" && <div className="workshop-uploads">
++              <label>Foto privada · até 3 MB<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => { void upload(e.target.files?.[0], item.id, "image"); e.target.value = ""; }} /></label>
++              {item.image && <div className="workshop-attachment">
++                {/* Private assets must bypass the public Next image optimizer. */}
++                {/* eslint-disable-next-line @next/next/no-img-element */}
++                <img src={mediaUrl(item.image)} alt="Prévia da foto privada" /><button type="button" onClick={() => updateItem(index, { image: "" })}>Retirar foto</button></div>}
++              {(active === "voice" || active === "capsule" || active === "stars") && <><label>Seu áudio · até 3 MB<input type="file" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/ogg,audio/wav,audio/x-wav,audio/webm" onChange={(e) => { void upload(e.target.files?.[0], item.id, "audio"); e.target.value = ""; }} /></label>{item.audio && <div className="workshop-attachment"><audio controls preload="none" src={mediaUrl(item.audio)} /><button type="button" onClick={() => updateItem(index, { audio: "" })}>Retirar áudio</button></div>}</>}
++            </div>}
++          </article>)}</div>
++          <button className="button button-outline" type="button" disabled={pending || draft.items.length >= 100} onClick={() => setDraft({ ...draft, items: [...draft.items, emptyItem(crypto.randomUUID())] })}>+ Adicionar {active === "stars" ? "estrela" : active === "reasons" ? "motivo" : "item"}</button>
++        </fieldset>
++        <div className="workshop-toolbar"><button type="button" className="button button-primary" onClick={() => mutate("save")} disabled={pending}>{busy ? "Salvando…" : uploading ? "Enviando arquivo…" : "Salvar rascunho"}</button><button type="button" className="button button-outline" onClick={() => { setPreviewPublished(false); setPreview(true); }} disabled={pending}>Ver rascunho</button><button type="button" className="button button-outline" onClick={() => setConfirm("publish")} disabled={pending}>{current.published ? "Atualizar versão liberada" : "Liberar esta novidade"}</button>{current.published && <><button type="button" className="workshop-text-button" disabled={pending} onClick={() => { setPreviewPublished(true); setPreview(true); }}>Ver versão liberada</button><button type="button" className="workshop-text-button" disabled={pending} onClick={() => setConfirm("hide")}>Recolher do site</button></>}</div>
++      </>}
++      <Modal open={preview} onClose={() => setPreview(false)} titleId="preview-title" className="workshop-preview"><h2 id="preview-title">{previewPublished ? "Versão liberada" : "Prévia privada"}</h2><p className="workshop-hint">{previewPublished ? "Conteúdo da versão liberada. A cápsula ainda respeita a data no site." : "Você pode ver todo o rascunho aqui, inclusive uma cápsula futura."}</p>{preview && (previewPublished ? current?.published : draft) && <SurpriseView section={{ id: active, content: (previewPublished ? current?.published : draft)!, locked: false }} preview />}</Modal>
++      <Modal open={Boolean(confirm)} onClose={() => { if (!busy) setConfirm(null); }} titleId="confirm-title" className="letter-modal workshop-confirm"><h2 id="confirm-title">{confirm === "hide" ? "Recolher esta novidade?" : "Liberar esta novidade?"}</h2><p className="workshop-hint">{confirm === "hide" ? "Ela deixará de aparecer para novos acessos. Seu rascunho continua guardado. Quem já viu ou baixou o conteúdo poderá ter uma cópia." : "O conteúdo atual do editor será salvo e colocado no site. Na cápsula, a carta continuará fechada até a data escolhida. As outras novidades mantêm suas próprias liberações."}</p><div className="workshop-confirm-actions"><button className="button button-primary" type="button" disabled={busy} onClick={() => confirm && mutate(confirm)}>{busy ? "Aguarde…" : confirm === "hide" ? "Recolher agora" : "Confirmar liberação"}</button><button className="button button-outline" type="button" disabled={busy} onClick={() => setConfirm(null)}>Continuar editando</button></div></Modal>
++    </main>}
++  </div>;
++}
+diff --git a/src/components/released-surprises.tsx b/src/components/released-surprises.tsx
+new file mode 100644
+index 0000000000000000000000000000000000000000..5f301389ed9dff828ae67b3bf96a8f4fceae217a
+--- /dev/null
++++ b/src/components/released-surprises.tsx
+@@ -0,0 +1,50 @@
++"use client";
++
++import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
++import type { PublicSurprise } from "@/lib/surprises";
++import { ItemMedia, SecretStars, SurpriseView } from "./surprise-view";
++
++const ReleasedContext = createContext<{ sections: PublicSurprise[]; refresh: () => void }>({ sections: [], refresh: () => {} });
++export function ReleasedSurprisesProvider({ children }: { children: ReactNode }) {
++  const [sections, setSections] = useState<PublicSurprise[]>([]);
++  const refresh = useCallback(async () => {
++    try {
++      const response = await fetch("/api/surprises", { cache: "no-store" });
++      if (!response.ok) { setSections([]); return; }
++      const body = await response.json(); setSections(body.sections);
++    } catch { setSections([]); }
++  }, []);
++  useEffect(() => {
++    let live = true;
++    const update = () => { if (live && document.visibilityState === "visible") void refresh(); };
++    update();
++    const timer = window.setInterval(update, 60000);
++    window.addEventListener("focus", update);
++    return () => { live = false; window.clearInterval(timer); window.removeEventListener("focus", update); };
++  }, [refresh]);
++  useEffect(() => {
++    // A voice message pauses the soundtrack, and vice versa.
++    const solo = (event: Event) => {
++      if (!(event.target instanceof HTMLAudioElement)) return;
++      document.querySelectorAll("audio").forEach((audio) => { if (audio !== event.target) audio.pause(); });
++    };
++    document.addEventListener("play", solo, true);
++    return () => document.removeEventListener("play", solo, true);
++  }, []);
++  return <ReleasedContext.Provider value={{ sections, refresh }}>{children}</ReleasedContext.Provider>;
++}
++export function ReleasedSurprises() {
++  const { sections, refresh } = useContext(ReleasedContext);
++  if (!sections.length) return null;
++  const stars = sections.find((section) => section.id === "stars");
++  return <>
++    {stars && <SecretStars section={stars} />}
++    <div className="wrap released-surprises">{sections.filter((section) => section.id !== "stars").map((section) => <SurpriseView key={section.id} section={section} refresh={refresh} />)}</div>
++  </>;
++}
++export function ReleasedLetterAudio({ letterId }: { letterId: string }) {
++  const { sections } = useContext(ReleasedContext);
++  const voice = sections.find((section) => section.id === "voice");
++  const items = voice?.content.items.filter((item) => item.letter === letterId) ?? [];
++  return items.length > 0 ? <div className="letter-voice">{items.map((item) => <div key={item.id}>{item.text && <p>{item.text}</p>}<ItemMedia item={item} /></div>)}</div> : null;
++}
+diff --git a/src/components/surprise-view.tsx b/src/components/surprise-view.tsx
+new file mode 100644
+index 0000000000000000000000000000000000000000..9f789b2d0f74de2bc5c48c91b9cc6003e84ede59
+--- /dev/null
++++ b/src/components/surprise-view.tsx
+@@ -0,0 +1,50 @@
++"use client";
++
++import { useState } from "react";
++import { type PublicSurprise, type SurpriseItem, mediaUrl } from "@/lib/surprises";
++import { Modal } from "./modal";
++import { Icon } from "./icon";
++
++function dateLabel(date: string) {
++  return new Intl.DateTimeFormat("pt-BR", { day: "numeric", month: "long", year: "numeric", timeZone: "America/Sao_Paulo" }).format(new Date(`${date}T12:00:00-03:00`));
++}
++export function ItemMedia({ item }: { item: SurpriseItem }) {
++  return <>
++    {/* The authenticated proxy enforces visibility and never goes through the public image optimizer. */}
++    {/* eslint-disable-next-line @next/next/no-img-element */}
++    {item.image && <img className="surprise-photo" src={mediaUrl(item.image)} alt={item.title || "Uma lembrança nossa"} loading="lazy" />}
++    {item.audio && <div className="surprise-audio"><p><Icon name="music" width="16" height="16" /> {item.title || "Um recado para você"}</p><audio controls preload="none" src={mediaUrl(item.audio)}>Seu navegador não suporta áudio.</audio></div>}
++  </>;
++}
++export function SurpriseView({ section, preview = false, refresh }: { section: PublicSurprise; preview?: boolean; refresh?: () => void }) {
++  const [selected, setSelected] = useState<string | null>(null);
++  const [reason, setReason] = useState(-1);
++  const { id, content, locked } = section;
++  const active = content.items.find((item) => item.id === selected);
++  const items = id === "timeline" ? [...content.items].sort((a, b) => a.date.localeCompare(b.date)) : content.items;
++  const reasonItem = reason >= 0 ? items[reason % Math.max(items.length, 1)] : undefined;
++  if (id === "voice" && !preview && !items.some((item) => !item.letter)) return null;
++  return <section className={`surprise-section surprise-${id}`} aria-label={content.title}>
++    <div className="surprise-heading"><p className="eyebrow">MAIS UM PEDACINHO DE NÓS</p><h2>{content.title}</h2>{content.intro && <p className="surprise-intro">{content.intro}</p>}</div>
++    {id === "capsule" && locked ? <div className="capsule-closed"><Icon name="mail" width="36" height="36" /><p>Tem um pedacinho do futuro guardado aqui.</p><p>Para abrir em <strong>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(new Date(content.unlockAt))}</strong> · horário de Goiás.</p><button className="button button-outline" type="button" onClick={refresh}>Conferir se já chegou a hora</button></div>
++    : id === "stars" ? <>
++      {preview && <p className="workshop-hint">As posições correspondem à largura e à altura da tela. No site, estas estrelas ficam sobre o fundo estrelado.</p>}
++      <div className="secret-constellation" aria-label="Estrelas para descobrir">{items.map((item) => <button key={item.id} type="button" className="secret-star" style={{ left: `${item.x}%`, top: `${item.y}%` }} onClick={() => setSelected(item.id)} aria-label="Descobrir o segredo desta estrela"><Icon name="star" /></button>)}</div>
++      <SecretMessage item={active} onClose={() => setSelected(null)} />
++    </> : id === "reasons" ? <div className="reason-reveal"><Icon name="heart" width="30" height="30" /><div className="reason-message" aria-live="polite">{reasonItem ? <><h3>{reasonItem.title}</h3><p>{reasonItem.text}</p></> : <p>Tem tantos detalhes seus que eu amo…</p>}</div><button type="button" className="button button-primary" disabled={!items.length} onClick={() => setReason((value) => (value + 1) % items.length)}>Me conta um motivo <Icon name="heart" width="16" height="16" /></button></div>
++    : <div className={id === "timeline" ? "surprise-timeline" : "surprise-cards"}>{items.filter((item) => id !== "voice" || preview || !item.letter).map((item) => <article key={item.id} className="surprise-card">
++      {item.date && <time dateTime={item.date}>{dateLabel(item.date)}</time>}
++      {id === "chapters" && <span className="chapter-state">{item.done ? "✓ Já vivemos esse capítulo" : "Ainda vamos viver"}</span>}
++      <h3>{item.title}</h3>{item.text && <p>{item.text}</p>}<ItemMedia item={item} />
++      {preview && item.letter && <small className="workshop-hint">Este áudio aparecerá dentro da cartinha escolhida.</small>}
++    </article>)}</div>}
++  </section>;
++}
++function SecretMessage({ item, onClose }: { item: SurpriseItem | undefined; onClose: () => void }) {
++  return <Modal open={Boolean(item)} onClose={onClose} titleId="secret-message-title" className="letter-modal">{item && <article className="secret-message"><Icon name="star" width="30" height="30" /><p className="eyebrow">VOCÊ ENCONTROU UM SEGREDO</p><h3 id="secret-message-title">{item.title || "Só para você"}</h3><p>{item.text}</p><ItemMedia item={item} /></article>}</Modal>;
++}
++export function SecretStars({ section }: { section: PublicSurprise }) {
++  const [selected, setSelected] = useState<string | null>(null);
++  const active = section.content.items.find((item) => item.id === selected);
++  return <><div className="secret-star-layer" aria-label="Segredos entre as estrelas">{section.content.items.map((item) => <button key={item.id} type="button" className="secret-star" style={{ left: `${item.x}%`, top: `${item.y}%` }} onClick={() => setSelected(item.id)} aria-label="Descobrir o segredo desta estrela"><Icon name="star" /></button>)}</div><SecretMessage item={active} onClose={() => setSelected(null)} /></>;
++}
+diff --git a/src/lib/server/media.ts b/src/lib/server/media.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..b4dfac23503a53d95111453a75ffd30d7fc15160
+--- /dev/null
++++ b/src/lib/server/media.ts
+@@ -0,0 +1,20 @@
++export const MAX_MEDIA_BYTES = 3 * 1024 * 1024;
++export const fileTypes = {
++  "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "audio/mpeg": "mp3",
++  "audio/mp4": "m4a", "audio/x-m4a": "m4a", "audio/ogg": "ogg", "audio/wav": "wav",
++  "audio/x-wav": "wav", "audio/webm": "webm",
++} as const;
++export function mediaExtension(type: string, data: Buffer) {
++  const ext = fileTypes[type as keyof typeof fileTypes];
++  const head = data.subarray(0, 16);
++  const matches = {
++    jpg: head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff,
++    png: head.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])),
++    webp: head.toString("ascii", 0, 4) === "RIFF" && head.toString("ascii", 8, 12) === "WEBP",
++    mp3: head.toString("ascii", 0, 3) === "ID3" || (head[0] === 0xff && (head[1] & 0xe0) === 0xe0),
++    m4a: head.toString("ascii", 4, 8) === "ftyp", ogg: head.toString("ascii", 0, 4) === "OggS",
++    wav: head.toString("ascii", 0, 4) === "RIFF" && head.toString("ascii", 8, 12) === "WAVE",
++    webm: head.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3])),
++  };
++  return ext && matches[ext] ? ext : null;
++}
+diff --git a/src/lib/server/private-http.ts b/src/lib/server/private-http.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..8571b079756c9d0e5365477e24349cc956c3e5e7
+--- /dev/null
++++ b/src/lib/server/private-http.ts
+@@ -0,0 +1,59 @@
++import "server-only";
++import { cookies } from "next/headers";
++import { NextResponse } from "next/server";
++import { validPasswordHash, verifySession } from "./security";
++import { HttpError, storageConfigured } from "./surprise-store";
++
++export const PRIVATE_HEADERS = {
++  "Cache-Control": "private, no-store, max-age=0", "CDN-Cache-Control": "no-store",
++  "Vercel-CDN-Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow, noarchive",
++  "X-Content-Type-Options": "nosniff", "Vary": "Cookie",
++};
++export function json(data: unknown, status = 200) { return NextResponse.json(data, { status, headers: PRIVATE_HEADERS }); }
++export function authConfig() {
++  const secret = process.env.ADMIN_SESSION_SECRET ?? "", passwordHash = process.env.ADMIN_PASSWORD_HASH ?? "";
++  if (secret.length < 32 || !validPasswordHash(passwordHash)) throw new HttpError(503, "A área privada ainda não foi configurada.");
++  return { secret, passwordHash };
++}
++export function privateConfigured() {
++  try { authConfig(); return storageConfigured() && Boolean(process.env.APP_ORIGIN); } catch { return false; }
++}
++export function cookieName() { return process.env.NODE_ENV === "production" ? "__Host-vy_admin" : "vy_admin"; }
++export async function isAdmin() {
++  try {
++    const { secret, passwordHash } = authConfig();
++    return verifySession((await cookies()).get(cookieName())?.value, secret, passwordHash);
++  } catch { return false; }
++}
++export async function requireAdmin() { if (!(await isAdmin())) throw new HttpError(401, "Entre novamente para continuar."); }
++export function sameOrigin(request: Request) {
++  const expected = process.env.APP_ORIGIN;
++  // Require an explicitly configured origin, rather than trusting Host / forwarded headers.
++  if (!expected) throw new HttpError(503, "A área privada ainda não foi configurada.");
++  if (request.headers.get("origin") !== new URL(expected).origin || request.headers.get("sec-fetch-site") === "cross-site") throw new HttpError(403, "Origem não permitida.");
++}
++export async function readBytes(request: Request, max: number) {
++  const declared = Number(request.headers.get("content-length"));
++  if (Number.isFinite(declared) && declared > max) throw new HttpError(413, "Arquivo ou conteúdo muito grande.");
++  const reader = request.body?.getReader();
++  if (!reader) throw new HttpError(400, "Conteúdo vazio.");
++  const chunks: Uint8Array[] = []; let length = 0;
++  try {
++    while (true) {
++      const chunk = await reader.read(); if (chunk.done) break;
++      length += chunk.value.byteLength;
++      if (length > max) { await reader.cancel(); throw new HttpError(413, "Arquivo ou conteúdo muito grande."); }
++      chunks.push(chunk.value);
++    }
++  } finally { reader.releaseLock(); }
++  return Buffer.concat(chunks, length);
++}
++export async function readJson(request: Request, max = 200000) {
++  if (!request.headers.get("content-type")?.startsWith("application/json")) throw new HttpError(415, "Envie conteúdo JSON.");
++  try { return JSON.parse((await readBytes(request, max)).toString("utf8")); }
++  catch (error) { if (error instanceof HttpError) throw error; throw new HttpError(400, "Conteúdo inválido."); }
++}
++export function failure(error: unknown) {
++  if (error instanceof HttpError) return json({ error: error.message }, error.status);
++  return json({ error: "Não foi possível concluir. Tente novamente." }, 500);
++}
+diff --git a/src/lib/server/security.ts b/src/lib/server/security.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..e8f97c725d7be0e84b123ef296b14a96910848d3
+--- /dev/null
++++ b/src/lib/server/security.ts
+@@ -0,0 +1,27 @@
++import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
++
++export const SESSION_SECONDS = 4 * 60 * 60;
++export function validPasswordHash(value: string) { return /^scrypt:[0-9a-f]{32}:[0-9a-f]{128}$/.test(value); }
++export function checkPassword(password: unknown, stored: string) {
++  if (typeof password !== "string" || password.length > 256 || !validPasswordHash(stored)) return false;
++  const [, salt, expected] = stored.split(":");
++  const actual = scryptSync(password, salt, 64);
++  return timingSafeEqual(actual, Buffer.from(expected, "hex"));
++}
++export function signSession(secret: string, passwordHash: string, now = Date.now()) {
++  const payload = Buffer.from(JSON.stringify({ role: "admin", exp: Math.floor(now / 1000) + SESSION_SECONDS, nonce: randomBytes(16).toString("hex") })).toString("base64url");
++  return `${payload}.${createHmac("sha256", secret + passwordHash).update(payload).digest("base64url")}`;
++}
++export function verifySession(token: string | undefined, secret: string, passwordHash: string, now = Date.now()) {
++  if (!token || token.length > 1024 || secret.length < 32 || !validPasswordHash(passwordHash)) return false;
++  const [payload, sig, extra] = token.split(".");
++  if (!payload || !sig || extra !== undefined) return false;
++  const expected = createHmac("sha256", secret + passwordHash).update(payload).digest();
++  const supplied = Buffer.from(sig, "base64url");
++  if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) return false;
++  try {
++    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
++    const seconds = Math.floor(now / 1000);
++    return data.role === "admin" && Number.isInteger(data.exp) && data.exp > seconds && data.exp <= seconds + SESSION_SECONDS;
++  } catch { return false; }
++}
+diff --git a/src/lib/server/surprise-store.ts b/src/lib/server/surprise-store.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..3e5750cb067a0ff77fe9fa5df149a3f052513d9e
+--- /dev/null
++++ b/src/lib/server/surprise-store.ts
+@@ -0,0 +1,48 @@
++import "server-only";
++import { type AdminSurprise, type SectionId, type PublicSurprise, publicSnapshot, referencedAssets, sectionIds } from "../surprises";
++
++export class HttpError extends Error { constructor(public status: number, message: string) { super(message); } }
++export const BUCKET = "private-surprises";
++export function storageConfigured() {
++  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
++}
++function config() {
++  const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
++  if (!url || !key) throw new HttpError(503, "A área privada ainda não foi configurada.");
++  const parsed = new URL(url);
++  if (parsed.protocol !== "https:" && !(process.env.NODE_ENV !== "production" && parsed.hostname === "127.0.0.1")) throw new HttpError(503, "Configuração privada inválida.");
++  return { url: parsed.origin, key };
++}
++export async function supabase(path: string, init: RequestInit = {}) {
++  const { url, key } = config();
++  const headers = new Headers(init.headers);
++  headers.set("apikey", key); headers.set("Authorization", `Bearer ${key}`);
++  let response: Response;
++  try { response = await fetch(`${url}${path}`, { ...init, headers, cache: "no-store", signal: AbortSignal.timeout(15000) }); }
++  catch { throw new HttpError(503, "O armazenamento privado não respondeu. Tente novamente."); }
++  if (!response.ok) {
++    // Do not log or return provider responses: they may contain personal content.
++    if (response.status === 409) throw new HttpError(409, "O conteúdo mudou em outra aba. Recarregue antes de salvar.");
++    throw new HttpError(503, "Não foi possível acessar o armazenamento privado. Verifique a configuração.");
++  }
++  return response;
++}
++export async function rpc(name: string, input: object) {
++  const response = await supabase(`/rest/v1/rpc/${name}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
++  return response.json();
++}
++export async function adminSections(): Promise<AdminSurprise[]> {
++  const response = await supabase("/rest/v1/surprise_sections?select=id,draft,published,version,published_at&order=id");
++  return response.json();
++}
++export async function publicSections(): Promise<PublicSurprise[]> {
++  if (!storageConfigured()) return [];
++  // No drafts, metadata or private revisions are selected for a public request.
++  const response = await supabase("/rest/v1/surprise_sections?select=id,published&published=not.is.null");
++  const rows: { id: SectionId; published: AdminSurprise["published"] }[] = await response.json();
++  return rows.map((row) => publicSnapshot(row.id, row.published)).filter((row): row is PublicSurprise => row !== null)
++    .sort((a, b) => sectionIds.indexOf(a.id) - sectionIds.indexOf(b.id));
++}
++export async function publicAssetAllowed(asset: string) {
++  return (await publicSections()).some((section) => !section.locked && referencedAssets(section.content).has(asset));
++}
+diff --git a/src/lib/surprises.ts b/src/lib/surprises.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..9a46e57c52ece6939bc9cb5b64fe1536b5233545
+--- /dev/null
++++ b/src/lib/surprises.ts
+@@ -0,0 +1,83 @@
++// Only structure and neutral labels belong here. Personal content lives in the database.
++export const sectionIds = ["timeline", "stars", "capsule", "voice", "chapters", "reasons"] as const;
++export type SectionId = typeof sectionIds[number];
++export const sectionLabels: Record<SectionId, string> = {
++  timeline: "Linha do tempo", stars: "Estrelas com segredos", capsule: "Cápsula do tempo",
++  voice: "Mensagens com a sua voz", chapters: "Nossos próximos capítulos", reasons: "Um motivo para te amar",
++};
++export const letterOptions = [
++  { id: "", label: "Na seção de áudios" }, { id: "saudade", label: "Quando a saudade apertar" },
++  { id: "dia-dificil", label: "Quando o dia estiver difícil" }, { id: "sorriso", label: "Quando precisar de um sorriso" },
++  { id: "nos", label: "Quando quiser lembrar de nós" },
++];
++export type SurpriseItem = {
++  id: string; title: string; text: string; date: string; image: string; audio: string;
++  letter: string; done: boolean; x: number; y: number;
++};
++export type SurpriseContent = { title: string; intro: string; unlockAt: string; items: SurpriseItem[] };
++export type PublicSurprise = { id: SectionId; content: SurpriseContent; locked: boolean };
++export type AdminSurprise = {
++  id: SectionId; draft: SurpriseContent; published: SurpriseContent | null;
++  version: number; published_at: string | null;
++};
++export function isSectionId(value: unknown): value is SectionId {
++  return typeof value === "string" && sectionIds.includes(value as SectionId);
++}
++export function emptyContent(id: SectionId): SurpriseContent {
++  return { title: sectionLabels[id], intro: "", unlockAt: "", items: [] };
++}
++export function emptyItem(id: string): SurpriseItem {
++  return { id, title: "", text: "", date: "", image: "", audio: "", letter: "", done: false, x: 12, y: 25 };
++}
++export const assetPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(jpg|png|webp|mp3|m4a|ogg|wav|webm)$/;
++export function mediaUrl(asset: string) { return `/api/surprises/media/${encodeURIComponent(asset)}`; }
++
++// Explicitly rebuild the object: never persist arbitrary client fields or external asset URLs.
++export function validateContent(value: unknown): SurpriseContent {
++  if (!value || typeof value !== "object") throw new Error("Conteúdo inválido.");
++  const v = value as Record<string, unknown>;
++  function str(input: unknown, max: number) {
++    if (typeof input !== "string" || input.length > max) throw new Error("Texto inválido ou muito longo.");
++    return input.trim();
++  }
++  const title = str(v.title, 160), intro = str(v.intro, 4000), unlockAt = str(v.unlockAt, 40);
++  if (!title) throw new Error("Escreva um título.");
++  if (unlockAt && (!/^\d{4}-\d\d-\d\dT\d\d:\d\d(?::\d\d(?:\.\d{3})?)?(Z|[+-]\d\d:\d\d)$/.test(unlockAt) || !Number.isFinite(Date.parse(unlockAt)))) throw new Error("Data de abertura inválida.");
++  if (!Array.isArray(v.items) || v.items.length > 100) throw new Error("Use até 100 itens por novidade.");
++  const seen = new Set<string>();
++  const items = v.items.map((input): SurpriseItem => {
++    if (!input || typeof input !== "object") throw new Error("Item inválido.");
++    const i = input as Record<string, unknown>;
++    const id = str(i.id, 80);
++    if (!/^[a-zA-Z0-9-]{1,80}$/.test(id) || seen.has(id)) throw new Error("Identificador repetido ou inválido.");
++    seen.add(id);
++    const image = str(i.image, 80), audio = str(i.audio, 80), date = str(i.date, 10), letter = str(i.letter, 20);
++    if ((image && (!assetPattern.test(image) || !/\.(jpg|png|webp)$/.test(image))) || (audio && (!assetPattern.test(audio) || !/\.(mp3|m4a|ogg|wav|webm)$/.test(audio)))) throw new Error("Arquivo inválido. Use o envio pelo painel.");
++    if (date && (!/^\d{4}-\d\d-\d\d$/.test(date) || !Number.isFinite(Date.parse(date)))) throw new Error("Data do item inválida.");
++    if (!letterOptions.some((l) => l.id === letter)) throw new Error("Cartinha inválida.");
++    if (typeof i.done !== "boolean" || typeof i.x !== "number" || typeof i.y !== "number" || !Number.isFinite(i.x) || !Number.isFinite(i.y) || i.x < 3 || i.x > 97 || i.y < 3 || i.y > 97) throw new Error("Posição da estrela inválida (3 a 97%).");
++    return { id, title: str(i.title, 160), text: str(i.text, 12000), date, image, audio, letter, done: i.done, x: i.x, y: i.y };
++  });
++  return { title, intro, unlockAt, items };
++}
++export function validatePublication(id: SectionId, content: SurpriseContent) {
++  if (!content.items.length) throw new Error("Adicione pelo menos um item antes de liberar.");
++  if (id === "capsule" && !content.unlockAt) throw new Error("Escolha a data e o horário da cápsula.");
++  for (const item of content.items) {
++    if (!item.title && !item.text) throw new Error("Preencha um título ou uma mensagem em cada item.");
++    if (id === "voice" && !item.audio) throw new Error("Envie o áudio de cada mensagem antes de liberar.");
++    if (id === "timeline" && !item.date) throw new Error("Preencha a data de cada marco.");
++  }
++}
++export function publicSnapshot(id: SectionId, value: SurpriseContent | null, now = Date.now()): PublicSurprise | null {
++  if (!value) return null;
++  const content = validateContent(value);
++  if (id === "capsule" && (!content.unlockAt || Date.parse(content.unlockAt) > now)) {
++    // Neither the future letter nor its media IDs or intro are sent before the server clock permits it.
++    return { id, locked: true, content: { title: content.title, intro: "", unlockAt: content.unlockAt, items: [] } };
++  }
++  return { id, content, locked: false };
++}
++export function referencedAssets(content: SurpriseContent) {
++  return new Set(content.items.flatMap((item) => [item.image, item.audio]).filter(Boolean));
++}
+diff --git a/supabase/surprises.sql b/supabase/surprises.sql
+new file mode 100644
+index 0000000000000000000000000000000000000000..d1ab4f7444467f998eed329e03afcf39b9857636
+--- /dev/null
++++ b/supabase/surprises.sql
+@@ -0,0 +1,74 @@
++-- Run in a SEPARATE Supabase project. Contains structure and empty slots only.
++begin;
++create table if not exists public.surprise_sections (
++  id text primary key check (id in ('timeline', 'stars', 'capsule', 'voice', 'chapters', 'reasons')),
++  draft jsonb not null,
++  published jsonb,
++  version integer not null default 0,
++  published_at timestamptz
++);
++alter table public.surprise_sections enable row level security;
++revoke all on public.surprise_sections from public, anon, authenticated;
++grant select, update on public.surprise_sections to service_role;
++insert into public.surprise_sections(id, draft)
++select id, jsonb_build_object('title', title, 'intro', '', 'unlockAt', '', 'items', '[]'::jsonb)
++from (values ('timeline', 'Linha do tempo'), ('stars', 'Estrelas com segredos'),
++  ('capsule', 'Cápsula do tempo'), ('voice', 'Mensagens com a sua voz'),
++  ('chapters', 'Nossos próximos capítulos'), ('reasons', 'Um motivo para te amar')) as slots(id, title)
++on conflict (id) do nothing;
++
++create table if not exists public.surprise_login_limits (
++  key text primary key, attempts integer not null, expires_at timestamptz not null
++);
++alter table public.surprise_login_limits enable row level security;
++revoke all on public.surprise_login_limits from public, anon, authenticated;
++
++create or replace function public.surprise_login_attempt(client_key text) returns boolean
++language plpgsql security definer set search_path = public, pg_temp as $$
++declare global_count integer; client_count integer;
++begin
++  if client_key !~ '^[0-9a-f]{64}$' then return false; end if;
++  -- Serialize the two counters, also across serverless instances.
++  perform pg_advisory_xact_lock(714963125);
++  delete from public.surprise_login_limits where expires_at <= now();
++  select attempts into global_count from public.surprise_login_limits where key = 'global';
++  select attempts into client_count from public.surprise_login_limits where key = client_key;
++  if coalesce(global_count, 0) >= 50 or coalesce(client_count, 0) >= 8 then return false; end if;
++  insert into public.surprise_login_limits(key, attempts, expires_at)
++  values ('global', 1, now() + interval '15 minutes'), (client_key, 1, now() + interval '15 minutes')
++  on conflict (key) do update set attempts = surprise_login_limits.attempts + 1;
++  return true;
++end;
++$$;
++revoke all on function public.surprise_login_attempt(text) from public, anon, authenticated;
++grant execute on function public.surprise_login_attempt(text) to service_role;
++
++create or replace function public.surprise_update(section_id text, expected_version integer, operation text, content jsonb)
++returns jsonb language plpgsql security definer set search_path = public, pg_temp as $$
++declare current_row public.surprise_sections;
++begin
++  select * into current_row from public.surprise_sections where id = section_id for update;
++  if not found or current_row.version <> expected_version then return null; end if;
++  if operation not in ('save', 'publish', 'hide') then raise exception 'Invalid operation'; end if;
++  if operation <> 'hide' and (content is null or jsonb_typeof(content) <> 'object') then raise exception 'Invalid content'; end if;
++  update public.surprise_sections set
++    draft = case when operation = 'hide' then draft else content end,
++    published = case when operation = 'publish' then content when operation = 'hide' then null else published end,
++    published_at = case when operation = 'publish' then now() when operation = 'hide' then null else published_at end,
++    version = version + 1
++  where id = section_id returning * into current_row;
++  return to_jsonb(current_row);
++end;
++$$;
++revoke all on function public.surprise_update(text, integer, text, jsonb) from public, anon, authenticated;
++grant execute on function public.surprise_update(text, integer, text, jsonb) to service_role;
++
++insert into storage.buckets(id, name, public, file_size_limit, allowed_mime_types)
++values ('private-surprises', 'private-surprises', false, 3145728,
++  array['image/jpeg','image/png','image/webp','audio/mpeg','audio/mp4','audio/x-m4a','audio/ogg','audio/wav','audio/x-wav','audio/webm'])
++on conflict(id) do update set public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
++-- Even an existing permissive policy on another bucket must not open this one.
++drop policy if exists protect_private_surprises on storage.objects;
++create policy protect_private_surprises on storage.objects as restrictive for all to anon, authenticated
++using (bucket_id <> 'private-surprises') with check (bucket_id <> 'private-surprises');
++commit;
+diff --git a/tests/privacy.test.mjs b/tests/privacy.test.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..9196a1d7a8627cf316c285b66e983352b6cf73d2
+--- /dev/null
++++ b/tests/privacy.test.mjs
+@@ -0,0 +1,89 @@
++import test from "node:test";
++import assert from "node:assert/strict";
++import { randomBytes, scryptSync } from "node:crypto";
++import { emptyContent, emptyItem, validateContent, validatePublication, publicSnapshot, referencedAssets, assetPattern } from "../src/lib/surprises.ts";
++import { signSession, verifySession, checkPassword, SESSION_SECONDS } from "../src/lib/server/security.ts";
++import { mediaExtension } from "../src/lib/server/media.ts";
++
++const salt = randomBytes(16).toString("hex"), password = randomBytes(24).toString("hex");
++const hash = `scrypt:${salt}:${scryptSync(password, salt, 64).toString("hex")}`;
++const secret = randomBytes(48).toString("hex"), now = Date.parse("2030-01-01T00:00:00Z");
++function content(id = "timeline") {
++  return { ...emptyContent(id), intro: "PRIVATE INTRO CANARY", items: [{ ...emptyItem("test-item"), text: "PRIVATE BODY CANARY", date: "2030-01-01", image: "a1b2c3d4-1234-4234-8234-123456789abc.jpg" }] };
++}
++test("correct password is verified; wrong, missing and malformed passwords fail", () => {
++  assert.equal(checkPassword(password, hash), true);
++  for (const value of ["wrong", null, {}, "a".repeat(257)]) assert.equal(checkPassword(value, hash), false);
++  assert.equal(checkPassword(password, "unset"), false);
++});
++test("signed admin session expires and cannot be extended by a client", () => {
++  const token = signSession(secret, hash, now);
++  assert.equal(verifySession(token, secret, hash, now), true);
++  assert.equal(verifySession(token, secret, hash, now + SESSION_SECONDS * 1000), false);
++  const [payload, signature] = token.split(".");
++  const parsed = JSON.parse(Buffer.from(payload, "base64url")); parsed.exp += 100000;
++  assert.equal(verifySession(`${Buffer.from(JSON.stringify(parsed)).toString("base64url")}.${signature}`, secret, hash, now), false);
++});
++test("session rejects forged tokens and is invalidated by credential rotation", () => {
++  const token = signSession(secret, hash, now);
++  for (const value of [undefined, "admin", token + ".extra", "x.y", "a".repeat(1025)]) assert.equal(verifySession(value, secret, hash, now), false);
++  assert.equal(verifySession(token, secret + "rotated", hash, now), false);
++  assert.equal(verifySession(token, secret, hash.replace(salt, randomBytes(16).toString("hex")), now), false);
++});
++test("an unreleased section has no public representation", () => {
++  assert.equal(publicSnapshot("timeline", null, now), null);
++});
++test("a future capsule exposes neither message, intro nor media identifiers", () => {
++  const draft = { ...content("capsule"), unlockAt: "2031-01-01T00:00:00Z" };
++  const snapshot = publicSnapshot("capsule", draft, now), serialized = JSON.stringify(snapshot);
++  assert.equal(snapshot.locked, true);
++  assert.deepEqual(snapshot.content.items, []);
++  assert.equal(snapshot.content.intro, "");
++  assert.equal(serialized.includes("PRIVATE"), false);
++  assert.equal(serialized.includes(draft.items[0].image), false);
++  assert.equal(referencedAssets(snapshot.content).size, 0);
++});
++test("capsule is released exactly when the server clock reaches its deadline", () => {
++  const draft = { ...content("capsule"), unlockAt: "2031-01-01T00:00:00Z" };
++  const deadline = Date.parse(draft.unlockAt);
++  assert.equal(publicSnapshot("capsule", draft, deadline - 1).locked, true);
++  assert.equal(publicSnapshot("capsule", draft, deadline).locked, false);
++  assert.equal(publicSnapshot("capsule", draft, deadline).content.items[0].text, "PRIVATE BODY CANARY");
++});
++test("published snapshots do not share references with a subsequent draft", () => {
++  const published = content(); const snapshot = publicSnapshot("timeline", published, now);
++  published.items[0].text = "NEW PRIVATE REVISION";
++  assert.equal(snapshot.content.items[0].text, "PRIVATE BODY CANARY");
++  assert.equal(JSON.stringify(snapshot).includes("NEW PRIVATE REVISION"), false);
++});
++test("content validation removes unknown fields and refuses external asset URLs", () => {
++  const draft = content(); assert.equal(validateContent({ ...draft, secret: "never copied" }).secret, undefined);
++  draft.items[0].image = "https://example.org/private.jpg";
++  assert.throws(() => validateContent(draft), /Arquivo inválido/);
++});
++test("traversal and incorrect media formats are not accepted", () => {
++  for (const value of ["../secret.jpg", "name.svg", "a/b.jpg", "%2e%2e", "https://example.org"]) assert.equal(assetPattern.test(value), false);
++  const draft = content(); draft.items[0].audio = draft.items[0].image;
++  assert.throws(() => validateContent(draft), /Arquivo inválido/);
++});
++test("publishing requires content, a capsule date, timeline dates and voice files", () => {
++  assert.throws(() => validatePublication("timeline", emptyContent("timeline")), /pelo menos/);
++  assert.throws(() => validatePublication("capsule", content("capsule")), /data e o horário/);
++  assert.throws(() => validatePublication("voice", content("voice")), /áudio/);
++  const draft = content(); draft.items[0].date = "";
++  assert.throws(() => validatePublication("timeline", draft), /data/);
++});
++test("unknown letters, duplicate IDs and invalid star positions fail validation", () => {
++  const draft = content(); draft.items.push({ ...draft.items[0] });
++  assert.throws(() => validateContent(draft), /repetido/);
++  draft.items.pop(); draft.items[0].letter = "unknown";
++  assert.throws(() => validateContent(draft), /Cartinha/);
++  draft.items[0].letter = ""; draft.items[0].x = NaN;
++  assert.throws(() => validateContent(draft), /Posição/);
++});
++test("upload sniffs file signatures and refuses HTML disguised as an image", () => {
++  assert.equal(mediaExtension("image/jpeg", Buffer.from("<html>not a photo</html>")), null);
++  assert.equal(mediaExtension("image/svg+xml", Buffer.from("<svg/>")), null);
++  assert.equal(mediaExtension("image/png", Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])), "png");
++  assert.equal(mediaExtension("audio/mpeg", Buffer.from("ID3 test")), "mp3");
++});

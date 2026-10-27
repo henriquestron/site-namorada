@@ -8,6 +8,7 @@ import { TogetherCounter } from "@/components/together-counter";
 import { MemoryAlbum } from "@/components/memory-album";
 import { OpenWhen } from "@/components/open-when";
 import { OurUniverse } from "@/components/our-universe";
+import { ReleasedSurprises, ReleasedSurprisesProvider } from "@/components/released-surprises";
 
 export default function NossoSite() {
   const audio = useRef<HTMLAudioElement>(null);
@@ -27,7 +28,7 @@ export default function NossoSite() {
   }
 
   return (
-    <div className="our-story" id="inicio">
+    <ReleasedSurprisesProvider><div className="our-story" id="inicio">
       <Stars />
       <audio ref={audio} src="/musica.mp3" loop preload="none" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onError={() => { setPlaying(false); setMusicError("A nossa música não carregou. Tente novamente daqui a pouquinho."); }} />
       <a className="skip-link" href="#conteudo">Ir para a nossa história</a>
@@ -99,12 +100,13 @@ export default function NossoSite() {
           </div><p className="letter-signoff">Com todo o meu amor,<span>Vitor</span></p></article><span className="letter-corner-star" aria-hidden="true">✧</span></div>
         </section>
 
+        <ReleasedSurprises />
         <section className="section wrap universe-section" id="universo" aria-label="O nosso encontro de universos"><OurUniverse /></section>
       </main>
 
       <footer className="site-footer wrap"><a className="wordmark" href="#inicio" aria-label="Voltar ao início">V<span>&</span>Y</a><p>Um pequeno espaço no universo.<br /><span>Um amor que não cabe nele.</span></p><span className="footer-love">Feito com muito <Icon name="heart" width="14" height="14" /></span></footer>
       {playing && <button className="floating-player" type="button" onClick={toggleMusic} aria-label="Pausar nossa música"><span className="equalizer" aria-hidden="true"><i /><i /><i /><i /></span><span>A nossa música<span>Pra Mudar A Minha Vida</span></span><Icon name="pause" width="16" height="16" /></button>}
       {musicError && <div className="music-error" role="status">{musicError}<button type="button" onClick={() => setMusicError("")} aria-label="Fechar aviso"><Icon name="close" width="16" height="16" /></button></div>}
-    </div>
+    </div></ReleasedSurprisesProvider>
   );
 }
